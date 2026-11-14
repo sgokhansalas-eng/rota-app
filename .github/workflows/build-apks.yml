@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        app: [customer, driver]
+        app: [customer, driver, admin]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -51,8 +51,10 @@ jobs:
           mkdir -p out
           if [ "${{ matrix.app }}" = "customer" ]; then
             cp customer/app/build/outputs/apk/debug/app-debug.apk out/ROTA-Musteri.apk
-          else
+          elif [ "${{ matrix.app }}" = "driver" ]; then
             cp driver/app/build/outputs/apk/debug/app-debug.apk out/ROTA-Surucu.apk
+          else
+            cp admin/app/build/outputs/apk/debug/app-debug.apk out/ROTA-Yonetim.apk
           fi
 
       - name: Upload APK
