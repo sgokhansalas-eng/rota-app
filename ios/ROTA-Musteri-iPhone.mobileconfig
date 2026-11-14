@@ -17,7 +17,7 @@
       <key>PayloadUUID</key><string>44A21FAD-9286-4DAA-A066-2C2FF8D59FE8</string>
       <key>PayloadVersion</key><integer>1</integer>
       <key>Precomposed</key><true/>
-      <key>URL</key><string>https://ftltemgtzkjfnkxsxxmd.supabase.co/functions/v1/rota-iphone-customer</string>
+      <key>URL</key><string>https://ftltemgtzkjfnkxsxxmd.supabase.co/functions/v1/rota-iphone-customer-v2</string>
     </dict>
   </array>
   <key>PayloadDescription</key><string>ROTA Müşteri iPhone ücretsiz kurulum profili</string>
@@ -27,6 +27,6 @@
   <key>PayloadRemovalDisallowed</key><false/>
   <key>PayloadType</key><string>Configuration</string>
   <key>PayloadUUID</key><string>2BE1BB46-D045-43AC-8251-2B5EF87A11CB</string>
-  <key>PayloadVersion</key><integer>2</integer>
+  <key>PayloadVersion</key><integer>3</integer>
 </dict>
 </plist>
