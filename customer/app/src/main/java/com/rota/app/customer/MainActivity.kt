@@ -90,6 +90,35 @@ class MainActivity : AppCompatActivity() {
                       document.body.appendChild(box);
 
                       var driverMarker = null;
+                      var nearbyMarkers = [];
+
+                      function clearNearbyMarkers() {
+                        try {
+                          if (typeof map !== 'undefined' && map) {
+                            nearbyMarkers.forEach(function(m){ try { map.removeLayer(m); } catch(e) {} });
+                          }
+                        } catch(e) {}
+                        nearbyMarkers = [];
+                      }
+
+                      function drawNearbyDrivers(list) {
+                        clearNearbyMarkers();
+                        try {
+                          if (typeof L === 'undefined' || typeof map === 'undefined' || !map) return;
+                          (list || []).forEach(function(d) {
+                            var lat = Number(d.lat), lng = Number(d.lng);
+                            if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+                            var icon = L.divIcon({
+                              className:'',
+                              html:'<div style="width:28px;height:28px;border-radius:50%;background:#ffffff;border:2px solid #081329;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 3px 9px rgba(0,0,0,.18)">🚗</div>',
+                              iconSize:[28,28],
+                              iconAnchor:[14,14]
+                            });
+                            var m = L.marker([lat,lng], {icon:icon, zIndexOffset:1500}).addTo(map);
+                            nearbyMarkers.push(m);
+                          });
+                        } catch(e) {}
+                      }
 
                       function getState() {
                         try { return JSON.parse(localStorage.getItem('rota_customer') || '{}') || {}; }
@@ -160,8 +189,52 @@ class MainActivity : AppCompatActivity() {
                           }
                         } catch(e) {}
                       }
+                      async function pollNearbyDrivers() {
+                        var tripId = activeTripId();
+                        var aid = accountId();
+                        var token = sessionToken();
+                        if (!aid || !token || typeof CORE === 'undefined' || !CORE) return;
+
+                        try {
+                          if (tripId) {
+                            var tr = await fetch(CORE + '?action=customer-trip-code', {
+                              method:'POST',
+                              headers:headers(),
+                              body:JSON.stringify({tripId:tripId, accountId:aid, sessionToken:token})
+                            });
+                            var tj = await tr.json().catch(function(){return {}});
+                            if (tr.ok && tj.status === 'accepted') {
+                              clearNearbyMarkers();
+                              return;
+                            }
+                          }
+                        } catch(e) {}
+
+                        if (!navigator.geolocation) return;
+                        navigator.geolocation.getCurrentPosition(async function(pos) {
+                          try {
+                            var r = await fetch(CORE + '?action=customer-nearby-drivers', {
+                              method:'POST',
+                              headers:headers(),
+                              body:JSON.stringify({
+                                accountId:aid,
+                                sessionToken:token,
+                                lat:Number(pos.coords.latitude),
+                                lng:Number(pos.coords.longitude),
+                                radiusKm:15
+                              })
+                            });
+                            var j = await r.json();
+                            if (!r.ok) return;
+                            drawNearbyDrivers(j.drivers || []);
+                          } catch(e) {}
+                        }, function(){}, {enableHighAccuracy:true, maximumAge:10000, timeout:12000});
+                      }
+
                       setInterval(pollDriver, 3000);
                       setTimeout(pollDriver, 1200);
+                      setInterval(pollNearbyDrivers, 5000);
+                      setTimeout(pollNearbyDrivers, 1600);
                     })();
                     """.trimIndent(),
                     null
