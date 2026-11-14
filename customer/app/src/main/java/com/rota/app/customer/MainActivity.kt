@@ -24,7 +24,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(web)
         web.settings.javaScriptEnabled = true
         web.settings.domStorageEnabled = true
-        web.settings.geolocationEnabled = true
+        web.settings.setGeolocationEnabled(true)
         web.settings.mediaPlaybackRequiresUserGesture = false
         web.webViewClient = WebViewClient()
         web.webChromeClient = object : WebChromeClient() {
