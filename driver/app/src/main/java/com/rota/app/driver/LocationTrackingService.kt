@@ -16,6 +16,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationCompat
 import java.net.HttpURLConnection
 import java.net.URL
+import org.json.JSONObject
 import java.util.concurrent.Executors
 
 class LocationTrackingService : Service(), LocationListener {
@@ -110,9 +111,12 @@ class LocationTrackingService : Service(), LocationListener {
                     doOutput = true
                     setRequestProperty("Content-Type", "application/json")
                 }
-                val safeId = id.replace("\\", "\\\\").replace(""", "\\"")
-                val safeToken = token.replace("\\", "\\\\").replace(""", "\\"")
-                val body = """{"driverId":"$safeId","sessionToken":"$safeToken","lat":$lat,"lng":$lng}"""
+                val body = JSONObject()
+                    .put("driverId", id)
+                    .put("sessionToken", token)
+                    .put("lat", lat)
+                    .put("lng", lng)
+                    .toString()
                 conn.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
                 conn.responseCode
                 conn.disconnect()
