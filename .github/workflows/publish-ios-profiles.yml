@@ -1,0 +1,29 @@
+name: Publish iPhone Install Profiles
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'ios/**'
+      - '.github/workflows/publish-ios-profiles.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Publish install profiles as release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view ios-install >/dev/null 2>&1; then
+            gh release create ios-install               --title "ROTA iPhone Kurulum Dosyalari"               --notes "ROTA Musteri ve Surucu iPhone kurulum profilleri."
+          fi
+          gh release upload ios-install ios/ROTA-Musteri-iPhone.mobileconfig --clobber
+          gh release upload ios-install ios/ROTA-Surucu-iPhone.mobileconfig --clobber
