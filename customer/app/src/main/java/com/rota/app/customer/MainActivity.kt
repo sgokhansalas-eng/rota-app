@@ -211,9 +211,9 @@ class MainActivity : AppCompatActivity() {
                         async function rotaSearchTurkeyPlaces(query) {
                           var q = String(query || '').trim();
                           if (q.length < 2) return [];
-                          var qEnc = encodeURIComponent(q + ', Türkiye');
-                          var nomUrl = 'https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&namedetails=1&extratags=1&countrycodes=tr&accept-language=tr&limit=14&viewbox=25.0,42.6,45.5,35.5&bounded=1&q=' + qEnc;
-                          var phoUrl = 'https://photon.komoot.io/api/?lang=tr&limit=14&bbox=25.0,35.5,45.5,42.6&q=' + qEnc;
+                          var qEnc = encodeURIComponent(q);
+                          var nomUrl = 'https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&namedetails=1&extratags=1&countrycodes=tr&accept-language=tr&limit=20&viewbox=25.0,42.6,45.5,35.5&bounded=1&q=' + qEnc;
+                          var phoUrl = 'https://photon.komoot.io/api/?lang=tr&limit=20&bbox=25.0,35.5,45.5,42.6&q=' + qEnc;
                           var lists = await Promise.all([
                             fetch(nomUrl, {headers:{'Accept':'application/json'}}).then(function(r){ return r.ok ? r.json() : []; }).catch(function(){ return []; }),
                             fetch(phoUrl, {headers:{'Accept':'application/json'}}).then(function(r){ return r.ok ? r.json() : {features:[]}; }).catch(function(){ return {features:[]}; })
@@ -301,7 +301,8 @@ class MainActivity : AppCompatActivity() {
                           if (!rotaActiveAddressInput) return;
                           rotaPlaceBox.innerHTML = '<div class="rp-head">🇹🇷 Türkiye geneli adres ve yer sonuçları</div>';
                           if (!items.length) {
-                            rotaPlaceBox.innerHTML += '<div class="rp-item"><div class="rp-title">Sonuç bulunamadı</div><div class="rp-sub">İlçe/il ekleyerek veya kurumun tam adını yazarak tekrar deneyin.</div></div>';
+                            rotaPlaceBox.style.display = 'none';
+                            return;
                           } else {
                             items.forEach(function(item){
                               var row = document.createElement('div');
