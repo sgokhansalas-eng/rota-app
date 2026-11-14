@@ -68,6 +68,300 @@ class MainActivity : AppCompatActivity() {
                       if(window.__rotaDriverChatInstalled)return;
                       window.__rotaDriverChatInstalled=true;
 
+                      // Türkiye geneli adres + yer/işletme araması.
+                      if (!window.__rotaTurkeyPlacesInstalled) {
+                        window.__rotaTurkeyPlacesInstalled = true;
+
+                        var rotaPlaceBox = document.createElement('div');
+                        rotaPlaceBox.id = 'rotaTurkeyPlaceBox';
+                        rotaPlaceBox.style.cssText = 'display:none;position:fixed;z-index:2147483000;background:#fff;border:1px solid #d7dde5;border-radius:14px;box-shadow:0 12px 36px rgba(0,0,0,.28);max-height:48vh;overflow:auto;font-family:Arial,sans-serif';
+                        document.body.appendChild(rotaPlaceBox);
+
+                        var rotaPlaceStyle = document.createElement('style');
+                        rotaPlaceStyle.textContent = '#rotaTurkeyPlaceBox .rp-item{padding:11px 12px;border-bottom:1px solid #edf0f4;cursor:pointer;background:#fff}#rotaTurkeyPlaceBox .rp-item:active{background:#f4f7fb}#rotaTurkeyPlaceBox .rp-title{font-size:15px;font-weight:800;color:#081329;line-height:1.25}#rotaTurkeyPlaceBox .rp-sub{font-size:12px;color:#5f6b7a;margin-top:4px;line-height:1.35}#rotaTurkeyPlaceBox .rp-head{position:sticky;top:0;background:#081329;color:#fff;padding:8px 11px;font-size:12px;font-weight:800;z-index:2}';
+                        document.head.appendChild(rotaPlaceStyle);
+
+                        var rotaActiveAddressInput = null;
+                        var rotaPlaceTimer = null;
+                        var rotaPlaceSeq = 0;
+                        var rotaSearchMarker = null;
+
+                        function rotaLower(v) {
+                          try { return String(v || '').toLocaleLowerCase('tr-TR'); }
+                          catch (e) { return String(v || '').toLowerCase(); }
+                        }
+
+                        function rotaLooksLikeAddressInput(el) {
+                          if (!el || !el.tagName || el.tagName.toLowerCase() !== 'input') return false;
+                          var type = rotaLower(el.type || 'text');
+                          if (['password','email','tel','number','date','time','checkbox','radio','file'].indexOf(type) >= 0) return false;
+                          if (el.id === 'rotaChatInput' || el.id === 'rdChatInput') return false;
+                          var ac = rotaLower(el.getAttribute('autocomplete') || '');
+                          if (ac.indexOf('password') >= 0 || ac.indexOf('email') >= 0 || ac.indexOf('tel') >= 0 || ac.indexOf('one-time-code') >= 0) return false;
+
+                          var labelText = '';
+                          try {
+                            if (el.id) {
+                              var lbl = document.querySelector('label[for="' + el.id.replace(/"/g,'') + '"]');
+                              if (lbl) labelText += ' ' + lbl.textContent;
+                            }
+                            var parent = el.closest('label');
+                            if (parent) labelText += ' ' + parent.textContent;
+                          } catch (e) {}
+
+                          var meta = rotaLower(
+                            (el.id || '') + ' ' + (el.name || '') + ' ' +
+                            (el.placeholder || '') + ' ' + (el.getAttribute('aria-label') || '') + ' ' + labelText
+                          );
+                          return /(adres|address|konum|location|alış|alis|nereden|varış|varis|nereye|hedef|destination|pickup|dropoff|sokak|cadde|mahalle|ilçe|ilce)/i.test(meta);
+                        }
+
+                        function rotaInputRole(el) {
+                          var meta = rotaLower((el.id || '') + ' ' + (el.name || '') + ' ' + (el.placeholder || '') + ' ' + (el.getAttribute('aria-label') || ''));
+                          if (/(varış|varis|nereye|hedef|destination|dropoff|to\b)/i.test(meta)) return 'destination';
+                          if (/(alış|alis|nereden|pickup|origin|from\b)/i.test(meta)) return 'pickup';
+                          return 'address';
+                        }
+
+                        function rotaPositionBox() {
+                          if (!rotaActiveAddressInput || rotaPlaceBox.style.display === 'none') return;
+                          var r = rotaActiveAddressInput.getBoundingClientRect();
+                          var left = Math.max(8, r.left);
+                          var width = Math.min(window.innerWidth - left - 8, Math.max(r.width, 280));
+                          rotaPlaceBox.style.left = left + 'px';
+                          rotaPlaceBox.style.top = Math.min(window.innerHeight - 100, r.bottom + 5) + 'px';
+                          rotaPlaceBox.style.width = width + 'px';
+                        }
+
+                        function rotaIconFor(item) {
+                          var t = rotaLower((item.kind || '') + ' ' + (item.type || '') + ' ' + (item.title || ''));
+                          if (/(school|college|university|kindergarten|okul|üniversite|universite)/.test(t)) return '🏫';
+                          if (/(hospital|clinic|doctor|medical|hastane|sağlık|saglik)/.test(t)) return '🏥';
+                          if (/(pharmacy|eczane)/.test(t)) return '💊';
+                          if (/(restaurant|cafe|fast_food|food|restoran|kafe)/.test(t)) return '🍽️';
+                          if (/(hotel|motel|hostel|otel)/.test(t)) return '🏨';
+                          if (/(fuel|petrol|benzin)/.test(t)) return '⛽';
+                          if (/(mall|shop|supermarket|market|store|office|company|industrial|commercial|firma|şirket|sirket|avm)/.test(t)) return '🏢';
+                          if (/(station|bus_stop|tram|railway|airport|terminal|istasyon|durak|havaliman)/.test(t)) return '🚉';
+                          if (/(police|courthouse|townhall|government|belediye|adliye|emniyet)/.test(t)) return '🏛️';
+                          return '📍';
+                        }
+
+                        function rotaFormatNominatim(x) {
+                          var a = x.address || {};
+                          var title = (x.namedetails && (x.namedetails.name || x.namedetails['name:tr'])) || x.name || (x.display_name || '').split(',')[0] || 'Konum';
+                          var parts = [
+                            a.house_number ? ((a.road || a.pedestrian || a.street || '') + ' ' + a.house_number).trim() : (a.road || a.pedestrian || a.street || ''),
+                            a.neighbourhood || a.quarter || a.suburb || a.village || '',
+                            a.town || a.city_district || a.district || a.county || '',
+                            a.city || a.province || a.state || ''
+                          ].filter(function(v,i,arr){ return v && arr.indexOf(v) === i; });
+                          var sub = parts.join(', ');
+                          if (!sub) sub = x.display_name || '';
+                          return {
+                            title:title,
+                            subtitle:sub,
+                            full:x.display_name || (title + (sub ? ', ' + sub : '')),
+                            lat:Number(x.lat),
+                            lng:Number(x.lon),
+                            kind:(x.category || '') + ' ' + (x.type || ''),
+                            type:x.type || '',
+                            source:'nominatim'
+                          };
+                        }
+
+                        function rotaFormatPhoton(f) {
+                          var p = f.properties || {};
+                          var title = p.name || p.street || p.city || 'Konum';
+                          var road = [p.street || '', p.housenumber || ''].filter(Boolean).join(' ');
+                          var parts = [road, p.district || p.locality || p.suburb || '', p.city || p.county || '', p.state || ''].filter(function(v,i,arr){ return v && arr.indexOf(v) === i; });
+                          var sub = parts.join(', ');
+                          var c = (f.geometry && f.geometry.coordinates) || [];
+                          return {
+                            title:title,
+                            subtitle:sub,
+                            full:title + (sub ? ', ' + sub : ''),
+                            lat:Number(c[1]),
+                            lng:Number(c[0]),
+                            kind:(p.osm_key || '') + ' ' + (p.osm_value || '') + ' ' + (p.type || ''),
+                            type:p.type || p.osm_value || '',
+                            source:'photon'
+                          };
+                        }
+
+                        function rotaInTurkey(lat,lng) {
+                          return Number.isFinite(lat) && Number.isFinite(lng) && lat >= 35.5 && lat <= 42.6 && lng >= 25.0 && lng <= 45.5;
+                        }
+
+                        async function rotaSearchTurkeyPlaces(query) {
+                          var q = String(query || '').trim();
+                          if (q.length < 2) return [];
+                          var qEnc = encodeURIComponent(q + ', Türkiye');
+                          var nomUrl = 'https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&namedetails=1&extratags=1&countrycodes=tr&accept-language=tr&limit=14&viewbox=25.0,42.6,45.5,35.5&bounded=1&q=' + qEnc;
+                          var phoUrl = 'https://photon.komoot.io/api/?lang=tr&limit=14&bbox=25.0,35.5,45.5,42.6&q=' + qEnc;
+                          var lists = await Promise.all([
+                            fetch(nomUrl, {headers:{'Accept':'application/json'}}).then(function(r){ return r.ok ? r.json() : []; }).catch(function(){ return []; }),
+                            fetch(phoUrl, {headers:{'Accept':'application/json'}}).then(function(r){ return r.ok ? r.json() : {features:[]}; }).catch(function(){ return {features:[]}; })
+                          ]);
+
+                          var items = [];
+                          (lists[0] || []).forEach(function(x){ var v=rotaFormatNominatim(x); if (rotaInTurkey(v.lat,v.lng)) items.push(v); });
+                          ((lists[1] && lists[1].features) || []).forEach(function(x){ var v=rotaFormatPhoton(x); if (rotaInTurkey(v.lat,v.lng)) items.push(v); });
+
+                          var seen = {};
+                          items = items.filter(function(x){
+                            var k = rotaLower(x.title) + '|' + x.lat.toFixed(4) + '|' + x.lng.toFixed(4);
+                            if (seen[k]) return false;
+                            seen[k] = true;
+                            return true;
+                          });
+
+                          var nq = rotaLower(q);
+                          items.sort(function(a,b){
+                            function score(x) {
+                              var n = rotaLower(x.title);
+                              var s = 0;
+                              if (n === nq) s += 100;
+                              if (n.indexOf(nq) === 0) s += 70;
+                              if (n.indexOf(nq) >= 0) s += 40;
+                              if (/(amenity|shop|office|tourism|school|hospital|pharmacy|restaurant|hotel|fuel|company|commercial)/i.test(x.kind)) s += 15;
+                              if (x.source === 'nominatim') s += 3;
+                              return s;
+                            }
+                            return score(b) - score(a);
+                          });
+                          return items.slice(0, 16);
+                        }
+
+                        function rotaApplyPlace(item) {
+                          var el = rotaActiveAddressInput;
+                          if (!el) return;
+                          var value = item.full || item.title;
+                          el.value = value;
+                          el.setAttribute('data-rota-lat', String(item.lat));
+                          el.setAttribute('data-rota-lng', String(item.lng));
+                          el.setAttribute('data-rota-place-name', item.title || '');
+                          el.setAttribute('data-rota-place-address', item.subtitle || '');
+
+                          var role = rotaInputRole(el);
+                          try {
+                            localStorage.setItem('rota_last_place_selection', JSON.stringify({role:role,name:item.title,address:item.subtitle,lat:item.lat,lng:item.lng,full:value}));
+                            if (role === 'pickup') {
+                              localStorage.setItem('rota_pickup_lat', String(item.lat));
+                              localStorage.setItem('rota_pickup_lng', String(item.lng));
+                              localStorage.setItem('rota_pickup_address', value);
+                              window.pickupLat = item.lat; window.pickupLng = item.lng;
+                              window.originLat = item.lat; window.originLng = item.lng;
+                            } else if (role === 'destination') {
+                              localStorage.setItem('rota_destination_lat', String(item.lat));
+                              localStorage.setItem('rota_destination_lng', String(item.lng));
+                              localStorage.setItem('rota_destination_address', value);
+                              window.destinationLat = item.lat; window.destinationLng = item.lng;
+                              window.dropoffLat = item.lat; window.dropoffLng = item.lng;
+                            }
+                          } catch (e) {}
+
+                          ['input','change','keyup','blur'].forEach(function(name){
+                            try { el.dispatchEvent(new Event(name,{bubbles:true})); } catch(e) {}
+                          });
+                          try {
+                            window.dispatchEvent(new CustomEvent('rota:place-selected',{detail:{role:role,name:item.title,address:item.subtitle,lat:item.lat,lng:item.lng,full:value}}));
+                          } catch(e) {}
+
+                          try {
+                            if (typeof map !== 'undefined' && map && map.setView) {
+                              map.setView([item.lat,item.lng], 17);
+                              if (typeof L !== 'undefined') {
+                                if (rotaSearchMarker) { try { map.removeLayer(rotaSearchMarker); } catch(e) {} }
+                                rotaSearchMarker = L.marker([item.lat,item.lng], {zIndexOffset:6500}).addTo(map);
+                              }
+                            }
+                          } catch(e) {}
+
+                          rotaPlaceBox.style.display = 'none';
+                          try { el.focus(); } catch(e) {}
+                        }
+
+                        function rotaRenderPlaces(items) {
+                          if (!rotaActiveAddressInput) return;
+                          rotaPlaceBox.innerHTML = '<div class="rp-head">🇹🇷 Türkiye geneli adres ve yer sonuçları</div>';
+                          if (!items.length) {
+                            rotaPlaceBox.innerHTML += '<div class="rp-item"><div class="rp-title">Sonuç bulunamadı</div><div class="rp-sub">İlçe/il ekleyerek veya kurumun tam adını yazarak tekrar deneyin.</div></div>';
+                          } else {
+                            items.forEach(function(item){
+                              var row = document.createElement('div');
+                              row.className = 'rp-item';
+                              row.innerHTML = '<div class="rp-title">' + rotaIconFor(item) + ' ' + esc(item.title) + '</div><div class="rp-sub">' + esc(item.subtitle || 'Türkiye') + '</div>';
+                              row.addEventListener('mousedown', function(e){ e.preventDefault(); rotaApplyPlace(item); });
+                              row.addEventListener('touchstart', function(e){ e.preventDefault(); rotaApplyPlace(item); }, {passive:false});
+                              rotaPlaceBox.appendChild(row);
+                            });
+                          }
+                          rotaPlaceBox.style.display = 'block';
+                          rotaPositionBox();
+                        }
+
+                        async function rotaHandleAddressInput(el) {
+                          if (!el || el !== rotaActiveAddressInput) return;
+                          var q = String(el.value || '').trim();
+                          if (q.length < 2) { rotaPlaceBox.style.display = 'none'; return; }
+                          var seq = ++rotaPlaceSeq;
+                          try {
+                            var items = await rotaSearchTurkeyPlaces(q);
+                            if (seq !== rotaPlaceSeq || el !== rotaActiveAddressInput) return;
+                            rotaRenderPlaces(items);
+                          } catch(e) {
+                            rotaPlaceBox.style.display = 'none';
+                          }
+                        }
+
+                        function rotaAttachAddressInput(el) {
+                          if (!rotaLooksLikeAddressInput(el) || el.getAttribute('data-rota-tr-search') === '1') return;
+                          el.setAttribute('data-rota-tr-search','1');
+                          el.setAttribute('autocomplete','off');
+                          el.addEventListener('focus', function(){
+                            rotaActiveAddressInput = el;
+                            if ((el.value || '').trim().length >= 2) {
+                              clearTimeout(rotaPlaceTimer);
+                              rotaPlaceTimer = setTimeout(function(){ rotaHandleAddressInput(el); }, 120);
+                            }
+                          });
+                          el.addEventListener('input', function(){
+                            rotaActiveAddressInput = el;
+                            clearTimeout(rotaPlaceTimer);
+                            rotaPlaceTimer = setTimeout(function(){ rotaHandleAddressInput(el); }, 420);
+                          });
+                        }
+
+                        function rotaScanAddressInputs() {
+                          try {
+                            document.querySelectorAll('input').forEach(rotaAttachAddressInput);
+                          } catch(e) {}
+                        }
+
+                        window.rotaTurkeyPlaceSearch = rotaSearchTurkeyPlaces;
+                        window.rotaTurkeyPlaceSelect = rotaApplyPlace;
+
+                        rotaScanAddressInputs();
+                        try {
+                          new MutationObserver(rotaScanAddressInputs).observe(document.documentElement || document.body,{childList:true,subtree:true});
+                        } catch(e) {}
+                        window.addEventListener('resize', rotaPositionBox);
+                        window.addEventListener('scroll', rotaPositionBox, true);
+                        document.addEventListener('mousedown', function(e){
+                          if (rotaPlaceBox.style.display !== 'none' && e.target !== rotaActiveAddressInput && !rotaPlaceBox.contains(e.target)) rotaPlaceBox.style.display = 'none';
+                        });
+
+                        setTimeout(function(){
+                          try {
+                            if (typeof map !== 'undefined' && map && map.setMaxBounds) {
+                              map.setMaxBounds([[35.5,25.0],[42.6,45.5]]);
+                            }
+                          } catch(e) {}
+                        }, 1600);
+                      }
+
+
                       function state(){
                         var keys=['rota_driver','driver','rotaDriver'];
                         for(var i=0;i<keys.length;i++){try{var v=JSON.parse(localStorage.getItem(keys[i])||'null');if(v)return v;}catch(e){}}
