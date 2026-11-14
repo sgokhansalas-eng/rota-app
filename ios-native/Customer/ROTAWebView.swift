@@ -79,9 +79,9 @@ struct ROTAWebView: UIViewRepresentable {
           }
           async function pollNearby(){
             var tripId=localStorage.getItem('rota_active_trip_id')||'';
-            if(!aid()||!stok()||typeof CORE==='undefined'||!CORE)return;
+            if(typeof CORE==='undefined'||!CORE)return;
             try{
-              if(tripId){
+              if(tripId&&aid()&&stok()){
                 var tr=await fetch(CORE+'?action=customer-trip-code',{method:'POST',headers:headers(),body:JSON.stringify({tripId:tripId,accountId:aid(),sessionToken:stok()})});
                 var tj=await tr.json().catch(function(){return {}});
                 if(tr.ok&&tj.status==='accepted'){clearNearbyMarkers();return;}
@@ -90,7 +90,7 @@ struct ROTAWebView: UIViewRepresentable {
             if(!navigator.geolocation)return;
             navigator.geolocation.getCurrentPosition(async function(pos){
               try{
-                var r=await fetch(CORE+'?action=customer-nearby-drivers',{method:'POST',headers:headers(),body:JSON.stringify({accountId:aid(),sessionToken:stok(),lat:Number(pos.coords.latitude),lng:Number(pos.coords.longitude),radiusKm:15})});
+                var r=await fetch(CORE+'?action=nearby-map-drivers',{method:'POST',headers:headers(),body:JSON.stringify({lat:Number(pos.coords.latitude),lng:Number(pos.coords.longitude),radiusKm:15})});
                 var j=await r.json();
                 if(!r.ok)return;
                 drawNearbyDrivers(j.drivers||[]);
