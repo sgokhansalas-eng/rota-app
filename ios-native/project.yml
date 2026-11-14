@@ -1,0 +1,45 @@
+name: ROTA
+options:
+  deploymentTarget:
+    iOS: "15.0"
+
+targets:
+  ROTAMusteri:
+    type: application
+    platform: iOS
+    sources:
+      - Customer
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.rota.ios.customer
+        PRODUCT_NAME: ROTA-Musteri
+        SWIFT_VERSION: "5.0"
+        IPHONEOS_DEPLOYMENT_TARGET: "15.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: "ROTA Müşteri"
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "ROTA, alış konumunuzu belirlemek için konum izninizi kullanır."
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIRequiresFullScreen: YES
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
+
+  ROTASurucu:
+    type: application
+    platform: iOS
+    sources:
+      - Driver
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.rota.ios.driver
+        PRODUCT_NAME: ROTA-Surucu
+        SWIFT_VERSION: "5.0"
+        IPHONEOS_DEPLOYMENT_TARGET: "15.0"
+        TARGETED_DEVICE_FAMILY: "1"
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: "ROTA Sürücü"
+        INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "ROTA Sürücü, müşteriye yönlendirme ve sürüş işlemleri için konum izninizi kullanır."
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_UIRequiresFullScreen: YES
+        CODE_SIGNING_ALLOWED: NO
+        CODE_SIGNING_REQUIRED: NO
