@@ -1,0 +1,67 @@
+name: Build ROTA iPhone IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'ios-native/**'
+      - '.github/workflows/build-ios-ipa.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: |
+          cd ios-native
+          xcodegen generate
+
+      - name: Build customer app
+        run: |
+          xcodebuild             -project ios-native/ROTA.xcodeproj             -scheme ROTAMusteri             -configuration Release             -sdk iphoneos             -derivedDataPath build/customer             CODE_SIGNING_ALLOWED=NO             CODE_SIGNING_REQUIRED=NO             build
+
+      - name: Build driver app
+        run: |
+          xcodebuild             -project ios-native/ROTA.xcodeproj             -scheme ROTASurucu             -configuration Release             -sdk iphoneos             -derivedDataPath build/driver             CODE_SIGNING_ALLOWED=NO             CODE_SIGNING_REQUIRED=NO             build
+
+      - name: Package IPA files
+        run: |
+          mkdir -p out/customer/Payload out/driver/Payload
+          cp -R build/customer/Build/Products/Release-iphoneos/ROTA-Musteri.app out/customer/Payload/
+          cp -R build/driver/Build/Products/Release-iphoneos/ROTA-Surucu.app out/driver/Payload/
+
+          cd out/customer
+          zip -qry ../ROTA-Musteri.ipa Payload
+          cd ../driver
+          zip -qry ../ROTA-Surucu.ipa Payload
+          cd ../..
+
+          ls -lh out/*.ipa
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: rota-ios-ipa
+          path: out/*.ipa
+          if-no-files-found: error
+
+      - name: Publish direct IPA downloads
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! gh release view ios-ipa >/dev/null 2>&1; then
+            gh release create ios-ipa               --title "ROTA iPhone IPA"               --notes "SideStore veya AltStore ile ucretsiz imzalanip kurulabilen ROTA iPhone paketleri."
+          fi
+          gh release upload ios-ipa out/ROTA-Musteri.ipa --clobber
+          gh release upload ios-ipa out/ROTA-Surucu.ipa --clobber
