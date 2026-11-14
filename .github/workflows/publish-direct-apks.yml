@@ -7,6 +7,7 @@ on:
     paths:
       - 'customer/**'
       - 'driver/**'
+      - 'admin/**'
       - '.github/workflows/publish-direct-apks.yml'
 
 permissions:
@@ -40,10 +41,14 @@ jobs:
       - name: Build driver
         working-directory: driver
         run: gradle --no-daemon :app:assembleDebug
+      - name: Build admin
+        working-directory: admin
+        run: gradle --no-daemon :app:assembleDebug
       - name: Publish direct APK files
         run: |
           cp customer/app/build/outputs/apk/debug/app-debug.apk /tmp/ROTA-Musteri.apk
           cp driver/app/build/outputs/apk/debug/app-debug.apk /tmp/ROTA-Surucu.apk
+          cp admin/app/build/outputs/apk/debug/app-debug.apk /tmp/ROTA-Yonetim.apk
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -55,7 +60,8 @@ jobs:
             mkdir -p apk
             cp /tmp/ROTA-Musteri.apk apk/ROTA-Musteri.apk
             cp /tmp/ROTA-Surucu.apk apk/ROTA-Surucu.apk
-            git add -f apk/ROTA-Musteri.apk apk/ROTA-Surucu.apk
+            cp /tmp/ROTA-Yonetim.apk apk/ROTA-Yonetim.apk
+            git add -f apk/ROTA-Musteri.apk apk/ROTA-Surucu.apk apk/ROTA-Yonetim.apk
 
             if git diff --cached --quiet; then
               echo "APK files unchanged"
