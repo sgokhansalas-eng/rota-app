@@ -195,6 +195,111 @@ class MainActivity : AppCompatActivity() {
                         return h;
                       }
                       var activeTrip='';
+                      var activeTripData=null;
+                      var driverRouteLayer=null;
+                      var driverCarMarker=null;
+                      var routeInfoBox=null;
+                      var routeLastKey='';
+                      var routeLastAt=0;
+
+                      function isGoogleDriverMap(){
+                        try{
+                          return !!(window.google && google.maps && typeof map!=='undefined' && map &&
+                            typeof map.getCenter==='function' && typeof map.panTo==='function');
+                        }catch(e){return false;}
+                      }
+                      function removeDriverLayer(layer){
+                        try{
+                          if(!layer)return;
+                          if(layer.setMap)layer.setMap(null);
+                          else if(typeof map!=='undefined'&&map&&map.removeLayer)map.removeLayer(layer);
+                        }catch(e){}
+                      }
+                      function ensureRouteInfo(){
+                        if(routeInfoBox)return routeInfoBox;
+                        routeInfoBox=document.createElement('div');
+                        routeInfoBox.id='rotaDriverRouteInfo';
+                        routeInfoBox.style.cssText='display:none;position:fixed;top:82px;left:50%;transform:translateX(-50%);z-index:999998;background:#111;color:#fff;border-radius:22px;padding:10px 18px;font:800 17px Arial,sans-serif;box-shadow:0 7px 20px rgba(0,0,0,.28);white-space:nowrap';
+                        document.body.appendChild(routeInfoBox);
+                        return routeInfoBox;
+                      }
+                      function setRouteInfo(km,min){
+                        var b=ensureRouteInfo();
+                        b.style.display='block';
+                        b.textContent=Number(km||0).toFixed(1)+' km • '+Math.max(1,Number(min||1))+' dk';
+                      }
+                      function hideRouteInfo(){
+                        if(routeInfoBox)routeInfoBox.style.display='none';
+                      }
+                      function updateDriverCar(lat,lng){
+                        try{
+                          if(!Number.isFinite(lat)||!Number.isFinite(lng)||typeof map==='undefined'||!map)return;
+                          if(isGoogleDriverMap()&&typeof google.maps.Marker==='function'){
+                            var svg='<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="29" fill="#081329" stroke="#f6be35" stroke-width="5"/><text x="32" y="42" text-anchor="middle" font-size="31">🚗</text></svg>';
+                            var icon={url:'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg),scaledSize:new google.maps.Size(56,56),anchor:new google.maps.Point(28,28)};
+                            if(!driverCarMarker||!driverCarMarker.setPosition){
+                              removeDriverLayer(driverCarMarker);
+                              driverCarMarker=new google.maps.Marker({position:{lat:lat,lng:lng},map:map,icon:icon,zIndex:999999,optimized:false,title:'Konumunuz'});
+                            }else{
+                              driverCarMarker.setPosition({lat:lat,lng:lng});
+                              if(driverCarMarker.setMap)driverCarMarker.setMap(map);
+                            }
+                            return;
+                          }
+                          if(typeof L!=='undefined'&&L.marker){
+                            var pane='rotaDriverOwnPane';
+                            try{
+                              if(map.createPane&&!map.getPane(pane)){
+                                var p=map.createPane(pane); p.style.zIndex='9999'; p.style.pointerEvents='none';
+                              }
+                            }catch(e){}
+                            if(!driverCarMarker||!driverCarMarker.setLatLng){
+                              removeDriverLayer(driverCarMarker);
+                              var ic=L.divIcon({className:'',html:'<div style="width:54px;height:54px;border-radius:50%;background:#081329;border:4px solid #f6be35;display:flex;align-items:center;justify-content:center;font-size:29px;box-shadow:0 0 0 7px rgba(246,190,53,.24),0 6px 18px rgba(0,0,0,.35)">🚗</div>',iconSize:[54,54],iconAnchor:[27,27]});
+                              driverCarMarker=L.marker([lat,lng],{icon:ic,pane:pane,zIndexOffset:10000}).addTo(map);
+                            }else driverCarMarker.setLatLng([lat,lng]);
+                          }
+                        }catch(e){}
+                      }
+                      function clearDriverRoute(){
+                        removeDriverLayer(driverRouteLayer);
+                        driverRouteLayer=null;
+                        hideRouteInfo();
+                      }
+                      async function drawDriverRoute(fromLat,fromLng,toLat,toLng){
+                        if(![fromLat,fromLng,toLat,toLng].every(Number.isFinite))return;
+                        var key=[fromLat.toFixed(4),fromLng.toFixed(4),toLat.toFixed(4),toLng.toFixed(4)].join('|');
+                        var now=Date.now();
+                        if(key===routeLastKey&&now-routeLastAt<5000)return;
+                        routeLastKey=key; routeLastAt=now;
+                        try{
+                          var geoUrl=(typeof GEO!=='undefined'&&GEO)?GEO:'https://ftltemgtzkjfnkxsxxmd.supabase.co/functions/v1/rota2-geo';
+                          var rr=await fetch(geoUrl+'?action=route',{method:'POST',headers:headers(),body:JSON.stringify({fl:fromLat,fn:fromLng,tl:toLat,tn:toLng})});
+                          var rj=await rr.json();
+                          if(!rr.ok||!rj.geometry||!rj.geometry.coordinates)return;
+                          clearDriverRoute();
+                          var coords=rj.geometry.coordinates;
+                          if(isGoogleDriverMap()&&typeof google.maps.Polyline==='function'){
+                            driverRouteLayer=new google.maps.Polyline({
+                              path:coords.map(function(pt){return {lat:Number(pt[1]),lng:Number(pt[0])};}),
+                              geodesic:true,strokeColor:'#111111',strokeOpacity:.96,strokeWeight:7,map:map,zIndex:9000
+                            });
+                          }else if(typeof L!=='undefined'&&L.polyline){
+                            driverRouteLayer=L.polyline(coords.map(function(pt){return [Number(pt[1]),Number(pt[0])];}),{color:'#111111',weight:7,opacity:.96}).addTo(map);
+                          }
+                          setRouteInfo(rj.km,rj.durationMinutes);
+                        }catch(e){}
+                      }
+                      function refreshDriverNavigation(){
+                        if(!activeTripData||!navigator.geolocation)return;
+                        navigator.geolocation.getCurrentPosition(function(pos){
+                          var lat=Number(pos.coords.latitude),lng=Number(pos.coords.longitude);
+                          updateDriverCar(lat,lng);
+                          var tlat=activeTripData.pickupVerified?Number(activeTripData.destination_lat):Number(activeTripData.pickup_lat);
+                          var tlng=activeTripData.pickupVerified?Number(activeTripData.destination_lng):Number(activeTripData.pickup_lng);
+                          drawDriverRoute(lat,lng,tlat,tlng);
+                        },function(){},{enableHighAccuracy:true,maximumAge:3000,timeout:10000});
+                      }
 
                       var btn=document.createElement('button');
                       btn.textContent='💬 Mesaj';
@@ -224,8 +329,16 @@ class MainActivity : AppCompatActivity() {
                           if(!r.ok)return;
                           var t=(j.trips||[]).find(function(x){return x.status==='accepted'&&x.driver_id===driverId;});
                           activeTrip=t&&t.trip_id||'';
+                          activeTripData=t||null;
                           btn.style.display=activeTrip?'block':'none';
-                          if(!activeTrip)panel.style.display='none';
+                          if(activeTrip){
+                            refreshDriverNavigation();
+                          }else{
+                            panel.style.display='none';
+                            clearDriverRoute();
+                            removeDriverLayer(driverCarMarker);
+                            driverCarMarker=null;
+                          }
                         }catch(e){}
                       }
                       async function load(){
@@ -280,6 +393,7 @@ class MainActivity : AppCompatActivity() {
                       },1000);
 
                       setInterval(findTrip,3000); setTimeout(findTrip,1000);
+                      setInterval(function(){if(activeTrip)refreshDriverNavigation();},3000);
                       setInterval(function(){if(panel.style.display==='block')load();},2500);
                     })();
                     """.trimIndent(),
