@@ -17,7 +17,7 @@
       <key>PayloadUUID</key><string>44A21FAD-9286-4DAA-A066-2C2FF8D59FE8</string>
       <key>PayloadVersion</key><integer>1</integer>
       <key>Precomposed</key><true/>
-      <key>URL</key><string>https://cdn.jsdelivr.net/gh/sgokhansalas-eng/rota-app@main/install/customer.html</string>
+      <key>URL</key><string>https://ftltemgtzkjfnkxsxxmd.supabase.co/functions/v1/rota-iphone-customer</string>
     </dict>
   </array>
   <key>PayloadDescription</key><string>ROTA Müşteri iPhone ücretsiz kurulum profili</string>
