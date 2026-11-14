@@ -11,6 +11,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: publish-ios-profiles
+  cancel-in-progress: true
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -23,7 +27,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           if ! gh release view ios-install >/dev/null 2>&1; then
-            gh release create ios-install               --title "ROTA iPhone Kurulum Dosyalari"               --notes "ROTA Musteri ve Surucu iPhone kurulum profilleri."
+            gh release create ios-install --title "ROTA iPhone Kurulum Dosyalari" --notes "ROTA Musteri ve Surucu iPhone kurulum profilleri."
           fi
-          gh release upload ios-install ios/ROTA-Musteri-iPhone.mobileconfig --clobber
-          gh release upload ios-install ios/ROTA-Surucu-iPhone.mobileconfig --clobber
+          gh release delete-asset ios-install ROTA-Musteri-iPhone.mobileconfig --yes >/dev/null 2>&1 || true
+          gh release delete-asset ios-install ROTA-Surucu-iPhone.mobileconfig --yes >/dev/null 2>&1 || true
+          gh release upload ios-install ios/ROTA-Musteri-iPhone.mobileconfig
+          gh release upload ios-install ios/ROTA-Surucu-iPhone.mobileconfig
