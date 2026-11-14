@@ -7,6 +7,7 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.webkit.JavascriptInterface
 import android.view.ViewGroup
 import android.webkit.GeolocationPermissions
 import android.webkit.WebChromeClient
@@ -51,6 +52,33 @@ class MainActivity : AppCompatActivity() {
         ViewCompat.requestApplyInsets(root)
 
         web.settings.javaScriptEnabled = true
+        web.addJavascriptInterface(object {
+            @JavascriptInterface
+            fun startTracking(driverId: String, sessionToken: String) {
+                if (driverId.isBlank()) return
+                runOnUiThread {
+                    val fine = ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                    val coarse = ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
+                    if (!fine && !coarse) return@runOnUiThread
+                    val i = Intent(this@MainActivity, LocationTrackingService::class.java).apply {
+                        action = LocationTrackingService.ACTION_START
+                        putExtra(LocationTrackingService.EXTRA_DRIVER_ID, driverId)
+                        putExtra(LocationTrackingService.EXTRA_SESSION_TOKEN, sessionToken)
+                    }
+                    ContextCompat.startForegroundService(this@MainActivity, i)
+                }
+            }
+
+            @JavascriptInterface
+            fun stopTracking() {
+                runOnUiThread {
+                    val i = Intent(this@MainActivity, LocationTrackingService::class.java).apply {
+                        action = LocationTrackingService.ACTION_STOP
+                    }
+                    startService(i)
+                }
+            }
+        }, "RotaNative")
         web.settings.domStorageEnabled = true
         web.settings.setGeolocationEnabled(true)
         web.settings.mediaPlaybackRequiresUserGesture = false
@@ -221,6 +249,36 @@ class MainActivity : AppCompatActivity() {
                       document.getElementById('rdChatClose').onclick=function(){panel.style.display='none';};
                       document.getElementById('rdChatSend').onclick=send;
                       document.getElementById('rdChatInput').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();send();}});
+                      // Android ön plan konum takibi: Google Maps açıldığında WebView arka plana düşse bile sürücü konumu akar.
+                      function nativeStartTracking(){
+                        try{
+                          var driverId=did(),token=stok();
+                          if(driverId && window.RotaNative && typeof window.RotaNative.startTracking==='function'){
+                            window.RotaNative.startTracking(String(driverId), String(token||''));
+                          }
+                        }catch(e){}
+                      }
+                      function nativeStopTracking(){
+                        try{
+                          if(window.RotaNative && typeof window.RotaNative.stopTracking==='function') window.RotaNative.stopTracking();
+                        }catch(e){}
+                      }
+                      var nativeWrapTimer=setInterval(function(){
+                        try{
+                          if(typeof window.acceptTrip==='function' && !window.acceptTrip.__rotaNativeWrapped){
+                            var originalAccept=window.acceptTrip;
+                            var wrapped=async function(){
+                              nativeStartTracking();
+                              try{return await originalAccept.apply(this,arguments);}
+                              catch(e){throw e;}
+                            };
+                            wrapped.__rotaNativeWrapped=true;
+                            window.acceptTrip=wrapped;
+                          }
+                          if(activeTrip) nativeStartTracking();
+                        }catch(e){}
+                      },1000);
+
                       setInterval(findTrip,3000); setTimeout(findTrip,1000);
                       setInterval(function(){if(panel.style.display==='block')load();},2500);
                     })();

@@ -273,17 +273,54 @@ class MainActivity : AppCompatActivity() {
                       }
                       function updateMarker(lat,lng) {
                         try {
-                          if (typeof L === 'undefined' || typeof map === 'undefined' || !map) return;
-                          if (!driverMarker) {
-                            var icon = L.divIcon({
-                              className:'',
-                              html:'<div style="width:38px;height:38px;border-radius:50%;background:#081329;border:3px solid #f6be35;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 12px rgba(0,0,0,.25)">🚗</div>',
-                              iconSize:[38,38],
-                              iconAnchor:[19,19]
-                            });
-                            driverMarker = L.marker([lat,lng], {icon:icon, zIndexOffset:5000}).addTo(map);
-                          } else {
-                            driverMarker.setLatLng([lat,lng]);
+                          if (!Number.isFinite(lat) || !Number.isFinite(lng) || typeof map === 'undefined' || !map) return;
+
+                          // Google Maps kullanılıyorsa gerçek harita marker'ı.
+                          if (window.google && google.maps && typeof google.maps.Marker === 'function' &&
+                              typeof map.getCenter === 'function' && typeof map.panTo === 'function') {
+                            var carSvg='data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(
+                              '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">'+
+                              '<circle cx="32" cy="32" r="29" fill="#081329" stroke="#f6be35" stroke-width="5"/>'+
+                              '<text x="32" y="42" text-anchor="middle" font-size="31">🚗</text></svg>'
+                            );
+                            if (!driverMarker || !driverMarker.setPosition) {
+                              try { if (driverMarker && driverMarker.remove) driverMarker.remove(); } catch(e) {}
+                              driverMarker = new google.maps.Marker({
+                                position:{lat:lat,lng:lng},
+                                map:map,
+                                icon:{url:carSvg,scaledSize:new google.maps.Size(54,54),anchor:new google.maps.Point(27,27)},
+                                zIndex:999999,
+                                optimized:false,
+                                title:'Sürücünüz'
+                              });
+                            } else {
+                              driverMarker.setPosition({lat:lat,lng:lng});
+                              if (driverMarker.setMap) driverMarker.setMap(map);
+                            }
+                            return;
+                          }
+
+                          // Leaflet kullanılıyorsa ayrı üst katmanda güçlü araç simgesi.
+                          if (typeof L !== 'undefined' && L.marker) {
+                            var paneName='rotaDriverPane';
+                            try {
+                              if (map.createPane && !map.getPane(paneName)) {
+                                var p=map.createPane(paneName);
+                                p.style.zIndex='9999';
+                                p.style.pointerEvents='none';
+                              }
+                            } catch(e) {}
+                            if (!driverMarker || !driverMarker.setLatLng) {
+                              var icon = L.divIcon({
+                                className:'',
+                                html:'<div style="width:50px;height:50px;border-radius:50%;background:#081329;border:4px solid #f6be35;display:flex;align-items:center;justify-content:center;font-size:27px;box-shadow:0 0 0 7px rgba(246,190,53,.25),0 6px 18px rgba(0,0,0,.35)">🚗</div>',
+                                iconSize:[50,50],
+                                iconAnchor:[25,25]
+                              });
+                              driverMarker = L.marker([lat,lng], {icon:icon, pane:paneName, zIndexOffset:10000}).addTo(map);
+                            } else {
+                              driverMarker.setLatLng([lat,lng]);
+                            }
                           }
                         } catch(e) {}
                       }
@@ -314,7 +351,10 @@ class MainActivity : AppCompatActivity() {
                             chatBtn.style.display = 'none';
                             chatPanel.style.display = 'none';
                             if (driverMarker && typeof map !== 'undefined' && map) {
-                              try { map.removeLayer(driverMarker); } catch(e) {}
+                              try {
+                                if (driverMarker && driverMarker.setMap) driverMarker.setMap(null);
+                                else if (map.removeLayer) map.removeLayer(driverMarker);
+                              } catch(e) {}
                               driverMarker = null;
                             }
                           }
