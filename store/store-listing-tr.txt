@@ -1,0 +1,11 @@
+ROTA
+Kısa açıklama: İstanbul'da yolculuk ve rezervasyon için ROTA.
+
+Uzun açıklama:
+ROTA ile İstanbul'da yolculuk talebi oluşturabilir, farklı araç seçeneklerini değerlendirebilir ve ileri tarihli rezervasyon yapabilirsiniz. Güvenli biniş kodu ile sürücü-yolcu eşleşmesini doğrulayabilir, yolculuk durumunu takip edebilirsiniz.
+
+ROTA Sürücü
+Kısa açıklama: ROTA sürücülerinin yolculuk ve rezervasyon yönetim uygulaması.
+
+Uzun açıklama:
+ROTA Sürücü uygulaması, kayıtlı sürücülerin çevrimiçi durumunu yönetmesine, anlık yolculuk taleplerini görmesine, müşteri alım noktasına yönlendirilmesine, biniş kodunu doğrulamasına ve rezervasyonları yönetmesine yardımcı olur.
