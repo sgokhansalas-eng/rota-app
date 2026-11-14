@@ -219,31 +219,81 @@ class MainActivity : AppCompatActivity() {
 
                       var driverMarker = null;
                       var nearbyMarkers = [];
+                      var liveRouteLayer = null;
+                      var lastLiveRouteAt = 0;
+                      var lastLiveRouteKey = '';
+
+                      function isGoogleMap(){
+                        try {
+                          return !!(window.google && google.maps && typeof map !== 'undefined' && map &&
+                            typeof map.getCenter === 'function' && typeof map.panTo === 'function');
+                        } catch(e) { return false; }
+                      }
+
+                      function removeAnyMarker(m){
+                        try {
+                          if(!m)return;
+                          if(m.setMap) m.setMap(null);
+                          else if(typeof map!=='undefined' && map && map.removeLayer) map.removeLayer(m);
+                        } catch(e) {}
+                      }
 
                       function clearNearbyMarkers() {
-                        try {
-                          if (typeof map !== 'undefined' && map) {
-                            nearbyMarkers.forEach(function(m){ try { map.removeLayer(m); } catch(e) {} });
-                          }
-                        } catch(e) {}
+                        nearbyMarkers.forEach(removeAnyMarker);
                         nearbyMarkers = [];
+                      }
+
+                      function makeGoogleCarIcon(size,assigned){
+                        var fill=assigned?'#081329':'#ffffff';
+                        var stroke=assigned?'#f6be35':'#081329';
+                        var svg='<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">'+
+                          '<circle cx="32" cy="32" r="28" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+(assigned?5:3)+'"/>'+
+                          '<text x="32" y="42" text-anchor="middle" font-size="'+(assigned?31:27)+'">🚗</text></svg>';
+                        return {
+                          url:'data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(svg),
+                          scaledSize:new google.maps.Size(size,size),
+                          anchor:new google.maps.Point(size/2,size/2)
+                        };
                       }
 
                       function drawNearbyDrivers(list) {
                         clearNearbyMarkers();
                         try {
-                          if (typeof L === 'undefined' || typeof map === 'undefined' || !map) return;
+                          if (typeof map === 'undefined' || !map) return;
                           (list || []).forEach(function(d) {
                             var lat = Number(d.lat), lng = Number(d.lng);
                             if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-                            var icon = L.divIcon({
-                              className:'',
-                              html:'<div style="width:28px;height:28px;border-radius:50%;background:#ffffff;border:2px solid #081329;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 3px 9px rgba(0,0,0,.18)">🚗</div>',
-                              iconSize:[28,28],
-                              iconAnchor:[14,14]
-                            });
-                            var m = L.marker([lat,lng], {icon:icon, zIndexOffset:1500}).addTo(map);
-                            nearbyMarkers.push(m);
+
+                            if(isGoogleMap() && typeof google.maps.Marker==='function'){
+                              var gm=new google.maps.Marker({
+                                position:{lat:lat,lng:lng},
+                                map:map,
+                                icon:makeGoogleCarIcon(34,false),
+                                zIndex:5000,
+                                optimized:false,
+                                title:'Çevrimiçi sürücü'
+                              });
+                              nearbyMarkers.push(gm);
+                              return;
+                            }
+
+                            if (typeof L !== 'undefined' && L.marker) {
+                              var pane='rotaNearbyPane';
+                              try{
+                                if(map.createPane && !map.getPane(pane)){
+                                  var pp=map.createPane(pane);
+                                  pp.style.zIndex='6200';
+                                }
+                              }catch(e){}
+                              var icon = L.divIcon({
+                                className:'',
+                                html:'<div style="width:32px;height:32px;border-radius:50%;background:#fff;border:2px solid #081329;display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 3px 10px rgba(0,0,0,.22)">🚗</div>',
+                                iconSize:[32,32],
+                                iconAnchor:[16,16]
+                              });
+                              var lm = L.marker([lat,lng], {icon:icon,pane:pane,zIndexOffset:2500}).addTo(map);
+                              nearbyMarkers.push(lm);
+                            }
                           });
                         } catch(e) {}
                       }
@@ -253,12 +303,12 @@ class MainActivity : AppCompatActivity() {
                         catch(e) { return {}; }
                       }
                       function accountId() {
-                        var c = getState();
-                        return localStorage.getItem('rota_customer_account_id') || c.accountId || c.account_id || c.id || '';
+                        var cc = getState();
+                        return localStorage.getItem('rota_customer_account_id') || cc.accountId || cc.account_id || cc.id || '';
                       }
                       function sessionToken() {
-                        var c = getState();
-                        return localStorage.getItem('rota_customer_session') || c.sessionToken || c.session_token || c.token || '';
+                        var cc = getState();
+                        return localStorage.getItem('rota_customer_session') || cc.sessionToken || cc.session_token || cc.token || '';
                       }
                       function activeTripId() {
                         return localStorage.getItem('rota_active_trip_id') || '';
@@ -271,36 +321,29 @@ class MainActivity : AppCompatActivity() {
                         } catch(e) {}
                         return h;
                       }
+
                       function updateMarker(lat,lng) {
                         try {
                           if (!Number.isFinite(lat) || !Number.isFinite(lng) || typeof map === 'undefined' || !map) return;
 
-                          // Google Maps kullanılıyorsa gerçek harita marker'ı.
-                          if (window.google && google.maps && typeof google.maps.Marker === 'function' &&
-                              typeof map.getCenter === 'function' && typeof map.panTo === 'function') {
-                            var carSvg='data:image/svg+xml;charset=UTF-8,'+encodeURIComponent(
-                              '<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">'+
-                              '<circle cx="32" cy="32" r="29" fill="#081329" stroke="#f6be35" stroke-width="5"/>'+
-                              '<text x="32" y="42" text-anchor="middle" font-size="31">🚗</text></svg>'
-                            );
+                          if (isGoogleMap() && typeof google.maps.Marker === 'function') {
                             if (!driverMarker || !driverMarker.setPosition) {
-                              try { if (driverMarker && driverMarker.remove) driverMarker.remove(); } catch(e) {}
+                              removeAnyMarker(driverMarker);
                               driverMarker = new google.maps.Marker({
                                 position:{lat:lat,lng:lng},
                                 map:map,
-                                icon:{url:carSvg,scaledSize:new google.maps.Size(54,54),anchor:new google.maps.Point(27,27)},
+                                icon:makeGoogleCarIcon(58,true),
                                 zIndex:999999,
                                 optimized:false,
                                 title:'Sürücünüz'
                               });
                             } else {
                               driverMarker.setPosition({lat:lat,lng:lng});
-                              if (driverMarker.setMap) driverMarker.setMap(map);
+                              if(driverMarker.setMap)driverMarker.setMap(map);
                             }
                             return;
                           }
 
-                          // Leaflet kullanılıyorsa ayrı üst katmanda güçlü araç simgesi.
                           if (typeof L !== 'undefined' && L.marker) {
                             var paneName='rotaDriverPane';
                             try {
@@ -311,11 +354,12 @@ class MainActivity : AppCompatActivity() {
                               }
                             } catch(e) {}
                             if (!driverMarker || !driverMarker.setLatLng) {
+                              removeAnyMarker(driverMarker);
                               var icon = L.divIcon({
                                 className:'',
-                                html:'<div style="width:50px;height:50px;border-radius:50%;background:#081329;border:4px solid #f6be35;display:flex;align-items:center;justify-content:center;font-size:27px;box-shadow:0 0 0 7px rgba(246,190,53,.25),0 6px 18px rgba(0,0,0,.35)">🚗</div>',
-                                iconSize:[50,50],
-                                iconAnchor:[25,25]
+                                html:'<div style="width:54px;height:54px;border-radius:50%;background:#081329;border:4px solid #f6be35;display:flex;align-items:center;justify-content:center;font-size:29px;box-shadow:0 0 0 7px rgba(246,190,53,.25),0 6px 20px rgba(0,0,0,.4)">🚗</div>',
+                                iconSize:[54,54],
+                                iconAnchor:[27,27]
                               });
                               driverMarker = L.marker([lat,lng], {icon:icon, pane:paneName, zIndexOffset:10000}).addTo(map);
                             } else {
@@ -324,6 +368,53 @@ class MainActivity : AppCompatActivity() {
                           }
                         } catch(e) {}
                       }
+
+                      function clearLiveRoute(){
+                        try{
+                          if(liveRouteLayer){
+                            if(liveRouteLayer.setMap) liveRouteLayer.setMap(null);
+                            else if(typeof map!=='undefined' && map && map.removeLayer) map.removeLayer(liveRouteLayer);
+                          }
+                        }catch(e){}
+                        liveRouteLayer=null;
+                      }
+
+                      async function drawLiveRoute(driverLat,driverLng,pickupLat,pickupLng){
+                        if(![driverLat,driverLng,pickupLat,pickupLng].every(Number.isFinite))return;
+                        var key=[driverLat.toFixed(4),driverLng.toFixed(4),pickupLat.toFixed(4),pickupLng.toFixed(4)].join('|');
+                        var now=Date.now();
+                        if(key===lastLiveRouteKey && now-lastLiveRouteAt<6000)return;
+                        lastLiveRouteKey=key; lastLiveRouteAt=now;
+                        try{
+                          var geoUrl=(typeof GEO!=='undefined'&&GEO)?GEO:'https://ftltemgtzkjfnkxsxxmd.supabase.co/functions/v1/rota2-geo';
+                          var rr=await fetch(geoUrl+'?action=route',{
+                            method:'POST',
+                            headers:headers(),
+                            body:JSON.stringify({fl:driverLat,fn:driverLng,tl:pickupLat,tn:pickupLng})
+                          });
+                          var rj=await rr.json();
+                          if(!rr.ok||!rj.geometry||!rj.geometry.coordinates)return;
+                          var coords=rj.geometry.coordinates;
+                          clearLiveRoute();
+
+                          if(isGoogleMap() && typeof google.maps.Polyline==='function'){
+                            var path=coords.map(function(pt){return {lat:Number(pt[1]),lng:Number(pt[0])};});
+                            liveRouteLayer=new google.maps.Polyline({
+                              path:path,
+                              geodesic:true,
+                              strokeColor:'#111111',
+                              strokeOpacity:0.95,
+                              strokeWeight:7,
+                              map:map,
+                              zIndex:9000
+                            });
+                          }else if(typeof L!=='undefined' && L.polyline){
+                            var latlngs=coords.map(function(pt){return [Number(pt[1]),Number(pt[0])];});
+                            liveRouteLayer=L.polyline(latlngs,{color:'#111111',weight:7,opacity:.95}).addTo(map);
+                          }
+                        }catch(e){}
+                      }
+
                       async function pollDriver() {
                         var tripId = activeTripId();
                         var aid = accountId();
@@ -341,47 +432,27 @@ class MainActivity : AppCompatActivity() {
                           var j = await r.json();
                           if (!r.ok) return;
                           if (j.status === 'accepted' && j.driverLocation) {
+                            var dlat=Number(j.driverLocation.lat), dlng=Number(j.driverLocation.lng);
+                            var plat=Number(j.pickupLocation&&j.pickupLocation.lat), plng=Number(j.pickupLocation&&j.pickupLocation.lng);
                             box.style.display = 'block';
                             chatBtn.style.display = 'block';
                             document.getElementById('rotaLiveEta').textContent = (j.etaMinutes || 1) + ' dk';
-                            document.getElementById('rotaLiveDistance').textContent = (j.driverLocation.distanceKm || 0).toFixed(1) + ' km uzakta';
-                            updateMarker(Number(j.driverLocation.lat), Number(j.driverLocation.lng));
+                            document.getElementById('rotaLiveDistance').textContent = (Number(j.driverLocation.distanceKm||0)).toFixed(1) + ' km uzakta';
+                            updateMarker(dlat,dlng);
+                            drawLiveRoute(dlat,dlng,plat,plng);
                           } else if (j.status === 'completed' || j.status === 'cancelled') {
                             box.style.display = 'none';
                             chatBtn.style.display = 'none';
                             chatPanel.style.display = 'none';
-                            if (driverMarker && typeof map !== 'undefined' && map) {
-                              try {
-                                if (driverMarker && driverMarker.setMap) driverMarker.setMap(null);
-                                else if (map.removeLayer) map.removeLayer(driverMarker);
-                              } catch(e) {}
-                              driverMarker = null;
-                            }
+                            removeAnyMarker(driverMarker);
+                            driverMarker = null;
+                            clearLiveRoute();
                           }
                         } catch(e) {}
                       }
+
                       async function pollNearbyDrivers() {
-                        var tripId = activeTripId();
-                        var aid = accountId();
-                        var token = sessionToken();
-                        if (typeof CORE === 'undefined' || !CORE) return;
-
-                        try {
-                          if (tripId && aid && token) {
-                            var tr = await fetch(CORE + '?action=customer-trip-code', {
-                              method:'POST',
-                              headers:headers(),
-                              body:JSON.stringify({tripId:tripId, accountId:aid, sessionToken:token})
-                            });
-                            var tj = await tr.json().catch(function(){return {}});
-                            if (tr.ok && tj.status === 'accepted') {
-                              clearNearbyMarkers();
-                              return;
-                            }
-                          }
-                        } catch(e) {}
-
-                        if (!navigator.geolocation) return;
+                        if (typeof CORE === 'undefined' || !CORE || !navigator.geolocation) return;
                         navigator.geolocation.getCurrentPosition(async function(pos) {
                           try {
                             var r = await fetch(CORE + '?action=nearby-map-drivers', {
@@ -390,15 +461,37 @@ class MainActivity : AppCompatActivity() {
                               body:JSON.stringify({
                                 lat:Number(pos.coords.latitude),
                                 lng:Number(pos.coords.longitude),
-                                radiusKm:15
+                                radiusKm:20
                               })
                             });
                             var j = await r.json();
                             if (!r.ok) return;
                             drawNearbyDrivers(j.drivers || []);
                           } catch(e) {}
-                        }, function(){}, {enableHighAccuracy:true, maximumAge:10000, timeout:12000});
+                        }, function(){}, {enableHighAccuracy:true, maximumAge:8000, timeout:12000});
                       }
+
+                      // Dat Dat benzeri daha temiz müşteri ekranı görünümü.
+                      (function installCleanRotaUi(){
+                        var st=document.createElement('style');
+                        st.id='rotaCleanUi';
+                        st.textContent=
+                          '.top{left:16px!important;right:16px!important;top:14px!important}'+
+                          '.box{border-radius:26px!important;box-shadow:0 10px 28px rgba(15,23,42,.14)!important}'+
+                          '.addr{min-height:68px!important;padding:12px 62px 12px 18px!important}'+
+                          '.addr small{font-size:12px!important}.addr b{font-size:18px!important}'+
+                          '.search{margin-top:10px!important;background:rgba(255,255,255,.96)!important}'+
+                          '.search input{font-size:18px!important;padding:16px 10px!important}'+
+                          '.sheet{left:0!important;right:0!important;bottom:0!important;border-radius:32px 32px 0 0!important;padding:13px 18px 20px!important;box-shadow:0 -10px 30px rgba(15,23,42,.14)!important}'+
+                          '.brand{font-size:21px!important}.route{font-size:14px!important;margin-top:5px!important}'+
+                          '.vehicles{display:grid!important;grid-template-columns:1fr 1fr!important;gap:10px!important;overflow:visible!important}'+
+                          '.v{width:auto!important;min-width:0!important;flex:none!important;border-radius:20px!important;padding:13px!important;min-height:92px!important}'+
+                          '.v.on{border:3px solid #f6be35!important;background:#fffdf5!important}'+
+                          '.call{border-radius:22px!important;padding:17px!important;font-size:19px!important;box-shadow:0 6px 18px rgba(246,190,53,.28)!important}'+
+                          '#rotaLiveDriverBox{top:14px!important;left:18px!important;right:18px!important;border-radius:22px!important;padding:13px 16px!important}'+
+                          '#rotaChatButton{bottom:24px!important;border-radius:24px!important;padding:13px 17px!important}';
+                        document.head.appendChild(st);
+                      })();
 
                       setInterval(pollDriver, 3000);
                       setTimeout(pollDriver, 1200);
