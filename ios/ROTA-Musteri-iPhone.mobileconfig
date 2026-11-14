@@ -27,6 +27,6 @@
   <key>PayloadRemovalDisallowed</key><false/>
   <key>PayloadType</key><string>Configuration</string>
   <key>PayloadUUID</key><string>2BE1BB46-D045-43AC-8251-2B5EF87A11CB</string>
-  <key>PayloadVersion</key><integer>3</integer>
+  <key>PayloadVersion</key><integer>1</integer>
 </dict>
 </plist>
