@@ -2,30 +2,31 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>PayloadContent</key>
-	<array>
-		<dict>
-			<key>FullScreen</key><true/>
-			<key>IsRemovable</key><true/>
-			<key>Label</key><string>ROTA Sürücü</string>
-			<key>PayloadDescription</key><string>ROTA Sürücü ana ekran web uygulamasi</string>
-			<key>PayloadDisplayName</key><string>ROTA Sürücü</string>
-			<key>PayloadIdentifier</key><string>com.rota.iphone.driver.webclip</string>
-			<key>PayloadOrganization</key><string>ROTA</string>
-			<key>PayloadType</key><string>com.apple.webClip.managed</string>
-			<key>PayloadUUID</key><string>E13D132C-533A-44C9-B6A8-9DF4B340A8D2</string>
-			<key>PayloadVersion</key><integer>1</integer>
-			<key>Precomposed</key><false/>
-			<key>URL</key><string>https://rota-surucu-final15.onrender.com</string>
-		</dict>
-	</array>
-	<key>PayloadDescription</key><string>ROTA Sürücü iPhone ana ekran kurulumu</string>
-	<key>PayloadDisplayName</key><string>ROTA Sürücü</string>
-	<key>PayloadIdentifier</key><string>com.rota.iphone.driver</string>
-	<key>PayloadOrganization</key><string>ROTA</string>
-	<key>PayloadRemovalDisallowed</key><false/>
-	<key>PayloadType</key><string>Configuration</string>
-	<key>PayloadUUID</key><string>1A97B03D-FDA7-4BD0-AB76-9FF7BB98E52F</string>
-	<key>PayloadVersion</key><integer>1</integer>
+  <key>PayloadContent</key>
+  <array>
+    <dict>
+      <key>FullScreen</key><true/>
+      <key>IsRemovable</key><true/>
+      <key>Label</key><string>ROTA Sürücü</string>
+      <key>Icon</key><data>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</data>
+      <key>PayloadDescription</key><string>ROTA Sürücü ana ekran web uygulaması</string>
+      <key>PayloadDisplayName</key><string>ROTA Sürücü</string>
+      <key>PayloadIdentifier</key><string>com.rota.iphone.driver.webclip</string>
+      <key>PayloadOrganization</key><string>ROTA</string>
+      <key>PayloadType</key><string>com.apple.webClip.managed</string>
+      <key>PayloadUUID</key><string>E13D132C-533A-44C9-B6A8-9DF4B340A8D2</string>
+      <key>PayloadVersion</key><integer>1</integer>
+      <key>Precomposed</key><true/>
+      <key>URL</key><string>https://rota-surucu-final15.onrender.com</string>
+    </dict>
+  </array>
+  <key>PayloadDescription</key><string>ROTA Sürücü iPhone ücretsiz kurulum profili</string>
+  <key>PayloadDisplayName</key><string>ROTA Sürücü</string>
+  <key>PayloadIdentifier</key><string>com.rota.iphone.driver</string>
+  <key>PayloadOrganization</key><string>ROTA</string>
+  <key>PayloadRemovalDisallowed</key><false/>
+  <key>PayloadType</key><string>Configuration</string>
+  <key>PayloadUUID</key><string>1A97B03D-FDA7-4BD0-AB76-9FF7BB98E52F</string>
+  <key>PayloadVersion</key><integer>2</integer>
 </dict>
 </plist>
