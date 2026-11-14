@@ -12,6 +12,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: publish-direct-apks-main
+  cancel-in-progress: true
+
 jobs:
   publish:
     runs-on: ubuntu-latest
@@ -38,15 +42,36 @@ jobs:
         run: gradle --no-daemon :app:assembleDebug
       - name: Publish direct APK files
         run: |
-          mkdir -p apk
-          cp customer/app/build/outputs/apk/debug/app-debug.apk apk/ROTA-Musteri.apk
-          cp driver/app/build/outputs/apk/debug/app-debug.apk apk/ROTA-Surucu.apk
+          cp customer/app/build/outputs/apk/debug/app-debug.apk /tmp/ROTA-Musteri.apk
+          cp driver/app/build/outputs/apk/debug/app-debug.apk /tmp/ROTA-Surucu.apk
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f apk/ROTA-Musteri.apk apk/ROTA-Surucu.apk
-          if git diff --cached --quiet; then
-            echo "APK files unchanged"
-          else
+
+          for attempt in 1 2 3; do
+            git fetch origin main
+            git reset --hard origin/main
+
+            mkdir -p apk
+            cp /tmp/ROTA-Musteri.apk apk/ROTA-Musteri.apk
+            cp /tmp/ROTA-Surucu.apk apk/ROTA-Surucu.apk
+            git add -f apk/ROTA-Musteri.apk apk/ROTA-Surucu.apk
+
+            if git diff --cached --quiet; then
+              echo "APK files unchanged"
+              exit 0
+            fi
+
             git commit -m "Guncel direkt APK dosyalarini yayinla"
-            git push
-          fi
+
+            if git push origin HEAD:main; then
+              echo "APK files published"
+              exit 0
+            fi
+
+            echo "Remote changed during publish; retrying ($attempt/3)"
+            sleep 2
+          done
+
+          echo "APK publish failed after 3 attempts"
+          exit 1
