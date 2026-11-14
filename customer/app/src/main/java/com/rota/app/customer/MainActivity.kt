@@ -193,10 +193,10 @@ class MainActivity : AppCompatActivity() {
                         var tripId = activeTripId();
                         var aid = accountId();
                         var token = sessionToken();
-                        if (!aid || !token || typeof CORE === 'undefined' || !CORE) return;
+                        if (typeof CORE === 'undefined' || !CORE) return;
 
                         try {
-                          if (tripId) {
+                          if (tripId && aid && token) {
                             var tr = await fetch(CORE + '?action=customer-trip-code', {
                               method:'POST',
                               headers:headers(),
@@ -213,12 +213,10 @@ class MainActivity : AppCompatActivity() {
                         if (!navigator.geolocation) return;
                         navigator.geolocation.getCurrentPosition(async function(pos) {
                           try {
-                            var r = await fetch(CORE + '?action=customer-nearby-drivers', {
+                            var r = await fetch(CORE + '?action=nearby-map-drivers', {
                               method:'POST',
                               headers:headers(),
                               body:JSON.stringify({
-                                accountId:aid,
-                                sessionToken:token,
                                 lat:Number(pos.coords.latitude),
                                 lng:Number(pos.coords.longitude),
                                 radiusKm:15
