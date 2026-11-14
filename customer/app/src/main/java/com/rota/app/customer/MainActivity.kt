@@ -4,10 +4,12 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.view.ViewGroup
 import android.webkit.GeolocationPermissions
 import android.webkit.WebChromeClient
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.FrameLayout
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -23,15 +25,30 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        val root = FrameLayout(this)
         web = WebView(this)
-        setContentView(web)
 
-        ViewCompat.setOnApplyWindowInsetsListener(web) { view, insets ->
+        root.addView(
+            web,
+            FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+        )
+        setContentView(root)
+
+        // WebView'in kendisini durum ve gezinme cubuklarinin arasina sigdir.
+        ViewCompat.setOnApplyWindowInsetsListener(root) { _, insets ->
             val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            view.setPadding(bars.left, bars.top, bars.right, bars.bottom)
+            val params = web.layoutParams as FrameLayout.LayoutParams
+            params.leftMargin = bars.left
+            params.topMargin = bars.top
+            params.rightMargin = bars.right
+            params.bottomMargin = bars.bottom
+            web.layoutParams = params
             insets
         }
-        ViewCompat.requestApplyInsets(web)
+        ViewCompat.requestApplyInsets(root)
 
         web.settings.javaScriptEnabled = true
         web.settings.domStorageEnabled = true
@@ -39,9 +56,36 @@ class MainActivity : AppCompatActivity() {
         web.settings.mediaPlaybackRequiresUserGesture = false
         web.settings.useWideViewPort = true
         web.settings.loadWithOverviewMode = true
-        web.settings.textZoom = 100
+        web.settings.textZoom = 90
 
-        web.webViewClient = WebViewClient()
+        // Tum arayuzu yaklasik %15 kucult.
+        web.setInitialScale(85)
+
+        web.webViewClient = object : WebViewClient() {
+            override fun onPageFinished(view: WebView, url: String) {
+                super.onPageFinished(view, url)
+
+                // Responsive sayfalarda WebView'in olcek ayarini garanti altina al.
+                view.evaluateJavascript(
+                    """
+                    (function() {
+                      var meta = document.querySelector('meta[name="viewport"]');
+                      if (!meta) {
+                        meta = document.createElement('meta');
+                        meta.name = 'viewport';
+                        document.head.appendChild(meta);
+                      }
+                      meta.setAttribute(
+                        'content',
+                        'width=device-width, initial-scale=0.85, minimum-scale=0.85, maximum-scale=0.85, user-scalable=no, viewport-fit=contain'
+                      );
+                    })();
+                    """.trimIndent(),
+                    null
+                )
+            }
+        }
+
         web.webChromeClient = object : WebChromeClient() {
             override fun onGeolocationPermissionsShowPrompt(origin: String, callback: GeolocationPermissions.Callback) {
                 if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
