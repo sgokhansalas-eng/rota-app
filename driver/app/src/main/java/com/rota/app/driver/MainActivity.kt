@@ -68,6 +68,60 @@ class MainActivity : AppCompatActivity() {
                       if(window.__rotaDriverChatInstalled)return;
                       window.__rotaDriverChatInstalled=true;
 
+                      // SMS ile güvenli sifre sifirlama.
+                      if (!window.__rotaPasswordResetInstalled) {
+                        window.__rotaPasswordResetInstalled = true;
+                        (function(){
+                          var role = 'driver';
+                          function by(i){ return document.getElementById(i); }
+                          function dig(v){ return String(v||'').replace(/\D/g,'').replace(/^90/,'').replace(/^0/,'').slice(-10); }
+                          async function resetApi(action, body){
+                            var coreUrl = (typeof CORE !== 'undefined' && CORE) ? CORE : 'https://ftltemgtzkjfnkxsxxmd.supabase.co/functions/v1/rota2-core';
+                            var headers = {'Content-Type':'application/json'};
+                            try {
+                              if (typeof KEY !== 'undefined' && KEY) headers.apikey = KEY;
+                              else if (typeof SUPA_KEY !== 'undefined' && SUPA_KEY) headers.apikey = SUPA_KEY;
+                            } catch(e) {}
+                            var r = await fetch(coreUrl + '?action=' + action, {method:'POST',headers:headers,body:JSON.stringify(body||{})});
+                            var j = await r.json().catch(function(){return {};});
+                            if(!r.ok) throw new Error(j.error || 'İşlem başarısız');
+                            return j;
+                          }
+                          function installForgot(){
+                            if (by('rotaForgotPassword')) return;
+                            var pass = document.querySelector('input[type="password"]');
+                            if (!pass) return;
+                            var authBtn = by('authBtn') || pass.parentElement.querySelector('button');
+                            if (!authBtn) return;
+                            var f = document.createElement('button');
+                            f.id = 'rotaForgotPassword';
+                            f.type = 'button';
+                            f.textContent = 'Şifremi Unuttum';
+                            f.style.cssText = 'width:100%;margin-top:10px;border:0;background:transparent;color:#0b4aa2;font-size:14px;font-weight:800;padding:10px';
+                            authBtn.insertAdjacentElement('afterend', f);
+                            f.onclick = async function(){
+                              var phoneInput = by('phone') || document.querySelector('input[type="tel"]');
+                              var phone = dig(phoneInput && phoneInput.value);
+                              if(phone.length !== 10){ alert('Geçerli telefon numarası girin.'); return; }
+                              try {
+                                await resetApi('password-reset-start',{role:role,phone:phone});
+                                var code = prompt('Telefonunuza gelen 6 haneli SMS kodunu girin:');
+                                if(!code) return;
+                                var np = prompt('Yeni şifrenizi girin (en az 6 karakter):');
+                                if(!np) return;
+                                await resetApi('password-reset-confirm',{role:role,phone:phone,code:String(code),newPassword:String(np)});
+                                alert('Şifreniz değiştirildi. Yeni şifrenizle giriş yapabilirsiniz.');
+                                try { localStorage.removeItem('rota_customer'); localStorage.removeItem('rota_driver'); localStorage.removeItem('rota_driver_session'); localStorage.removeItem('rota_customer_session'); } catch(e) {}
+                                if(pass) pass.value = '';
+                              } catch(e) { alert(e.message || 'Şifre değiştirilemedi.'); }
+                            };
+                          }
+                          setTimeout(installForgot,300);
+                          setTimeout(installForgot,1200);
+                        })();
+                      }
+
+
                       // Türkiye geneli adres + yer/işletme araması.
                       if (!window.__rotaTurkeyPlacesInstalled) {
                         window.__rotaTurkeyPlacesInstalled = true;
