@@ -17,7 +17,7 @@
       <key>PayloadUUID</key><string>E13D132C-533A-44C9-B6A8-9DF4B340A8D2</string>
       <key>PayloadVersion</key><integer>1</integer>
       <key>Precomposed</key><true/>
-      <key>URL</key><string>https://rota-surucu-final15.onrender.com</string>
+      <key>URL</key><string>https://cdn.jsdelivr.net/gh/sgokhansalas-eng/rota-app@main/install/driver.html</string>
     </dict>
   </array>
   <key>PayloadDescription</key><string>ROTA Sürücü iPhone ücretsiz kurulum profili</string>
