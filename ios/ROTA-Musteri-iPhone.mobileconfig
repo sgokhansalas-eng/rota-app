@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>PayloadContent</key>
+	<array>
+		<dict>
+			<key>FullScreen</key><true/>
+			<key>IsRemovable</key><true/>
+			<key>Label</key><string>ROTA</string>
+			<key>PayloadDescription</key><string>ROTA Müşteri ana ekran web uygulamasi</string>
+			<key>PayloadDisplayName</key><string>ROTA Müşteri</string>
+			<key>PayloadIdentifier</key><string>com.rota.iphone.customer.webclip</string>
+			<key>PayloadOrganization</key><string>ROTA</string>
+			<key>PayloadType</key><string>com.apple.webClip.managed</string>
+			<key>PayloadUUID</key><string>44A21FAD-9286-4DAA-A066-2C2FF8D59FE8</string>
+			<key>PayloadVersion</key><integer>1</integer>
+			<key>Precomposed</key><false/>
+			<key>URL</key><string>https://rota-musteri-final19.onrender.com</string>
+		</dict>
+	</array>
+	<key>PayloadDescription</key><string>ROTA Müşteri iPhone ana ekran kurulumu</string>
+	<key>PayloadDisplayName</key><string>ROTA Müşteri</string>
+	<key>PayloadIdentifier</key><string>com.rota.iphone.customer</string>
+	<key>PayloadOrganization</key><string>ROTA</string>
+	<key>PayloadRemovalDisallowed</key><false/>
+	<key>PayloadType</key><string>Configuration</string>
+	<key>PayloadUUID</key><string>2BE1BB46-D045-43AC-8251-2B5EF87A11CB</string>
+	<key>PayloadVersion</key><integer>1</integer>
+</dict>
+</plist>
