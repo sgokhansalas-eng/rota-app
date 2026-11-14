@@ -68,7 +68,7 @@ class MainActivity : AppCompatActivity() {
                       if(window.__rotaDriverChatInstalled)return;
                       window.__rotaDriverChatInstalled=true;
 
-                      // SMS ile güvenli sifre sifirlama.
+                      // E-posta ile güvenli sifre sifirlama.
                       if (!window.__rotaPasswordResetInstalled) {
                         window.__rotaPasswordResetInstalled = true;
                         (function(){
@@ -99,13 +99,35 @@ class MainActivity : AppCompatActivity() {
                             f.textContent = 'Şifremi Unuttum';
                             f.style.cssText = 'width:100%;margin-top:10px;border:0;background:transparent;color:#0b4aa2;font-size:14px;font-weight:800;padding:10px';
                             authBtn.insertAdjacentElement('afterend', f);
+                            var eb = document.createElement('button');
+                            eb.id = 'rotaEmailSetup';
+                            eb.type = 'button';
+                            eb.textContent = 'E-posta Tanımla';
+                            eb.style.cssText = 'width:100%;margin-top:4px;border:0;background:transparent;color:#475569;font-size:13px;font-weight:800;padding:8px';
+                            f.insertAdjacentElement('afterend', eb);
+                            eb.onclick = async function(){
+                              var phoneInput = by('phone') || document.querySelector('input[type="tel"]');
+                              var phone = dig(phoneInput && phoneInput.value);
+                              var currentPassword = String(pass && pass.value || '');
+                              if(phone.length !== 10){ alert('Geçerli telefon numarası girin.'); return; }
+                              if(currentPassword.length < 6){ alert('Önce mevcut şifrenizi şifre alanına girin.'); return; }
+                              var email = prompt('Hesabınıza bağlamak istediğiniz e-posta adresini girin:');
+                              if(!email) return;
+                              try {
+                                var s = await resetApi('email-link-start',{role:role,phone:phone,password:currentPassword,email:String(email)});
+                                var code = prompt((s.emailMasked ? s.emailMasked + ' adresine' : 'E-posta adresinize') + ' gönderilen 6 haneli kodu girin:');
+                                if(!code) return;
+                                await resetApi('email-link-confirm',{role:role,phone:phone,password:currentPassword,email:String(email),code:String(code)});
+                                alert('E-posta adresiniz doğrulandı ve hesabınıza bağlandı.');
+                              } catch(e) { alert(e.message || 'E-posta tanımlanamadı.'); }
+                            };
                             f.onclick = async function(){
                               var phoneInput = by('phone') || document.querySelector('input[type="tel"]');
                               var phone = dig(phoneInput && phoneInput.value);
                               if(phone.length !== 10){ alert('Geçerli telefon numarası girin.'); return; }
                               try {
                                 await resetApi('password-reset-start',{role:role,phone:phone});
-                                var code = prompt('Telefonunuza gelen 6 haneli SMS kodunu girin:');
+                                var code = prompt('E-posta adresinize gelen 6 haneli kodu girin:');
                                 if(!code) return;
                                 var np = prompt('Yeni şifrenizi girin (en az 6 karakter):');
                                 if(!np) return;
