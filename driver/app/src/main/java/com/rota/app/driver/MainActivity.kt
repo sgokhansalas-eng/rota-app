@@ -2,7 +2,9 @@ package com.rota.app.driver
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.ViewGroup
@@ -56,7 +58,37 @@ class MainActivity : AppCompatActivity() {
         web.settings.loadWithOverviewMode = true
         web.settings.textZoom = 100
 
-        web.webViewClient = WebViewClient()
+        web.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView?, url: String?): Boolean {
+                val target = url ?: return false
+                return try {
+                    when {
+                        target.startsWith("intent://") -> {
+                            val intent = Intent.parseUri(target, Intent.URI_INTENT_SCHEME)
+                            val fallback = intent.getStringExtra("browser_fallback_url")
+                            try {
+                                startActivity(intent)
+                            } catch (_: Exception) {
+                                if (!fallback.isNullOrBlank()) {
+                                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(fallback)))
+                                }
+                            }
+                            true
+                        }
+                        target.startsWith("geo:") ||
+                        target.startsWith("google.navigation:") ||
+                        target.startsWith("https://www.google.com/maps") ||
+                        target.startsWith("https://maps.google.com") -> {
+                            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(target)))
+                            true
+                        }
+                        else -> false
+                    }
+                } catch (_: Exception) {
+                    false
+                }
+            }
+        }
         web.webChromeClient = object : WebChromeClient() {
             override fun onGeolocationPermissionsShowPrompt(origin: String, callback: GeolocationPermissions.Callback) {
                 if (ContextCompat.checkSelfPermission(this@MainActivity, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
