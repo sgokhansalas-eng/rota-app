@@ -115,9 +115,9 @@ class MainActivity : AppCompatActivity() {
                               if(!email) return;
                               try {
                                 var s = await resetApi('email-link-start',{role:role,phone:phone,password:currentPassword,email:String(email)});
-                                var code = prompt((s.emailMasked ? s.emailMasked + ' adresine' : 'E-posta adresinize') + ' gönderilen 6 haneli kodu girin:');
-                                if(!code) return;
-                                await resetApi('email-link-confirm',{role:role,phone:phone,password:currentPassword,email:String(email),code:String(code)});
+                                var ok = confirm((s.emailMasked ? s.emailMasked + ' adresine' : 'E-posta adresinize') + ' onay bağlantısı gönderildi. E-postadaki "Confirm email address" bağlantısına dokunun. Onayladıktan sonra buraya dönüp TAMAM deyin.');
+                                if(!ok) return;
+                                await resetApi('email-link-confirm',{role:role,phone:phone,password:currentPassword,email:String(email)});
                                 alert('E-posta adresiniz doğrulandı ve hesabınıza bağlandı.');
                               } catch(e) { alert(e.message || 'E-posta tanımlanamadı.'); }
                             };
@@ -126,12 +126,12 @@ class MainActivity : AppCompatActivity() {
                               var phone = dig(phoneInput && phoneInput.value);
                               if(phone.length !== 10){ alert('Geçerli telefon numarası girin.'); return; }
                               try {
-                                await resetApi('password-reset-start',{role:role,phone:phone});
-                                var code = prompt('E-posta adresinize gelen 6 haneli kodu girin:');
-                                if(!code) return;
+                                var s = await resetApi('password-reset-start',{role:role,phone:phone});
+                                var ok = confirm((s.emailMasked ? s.emailMasked + ' adresine' : 'Kayıtlı e-posta adresinize') + ' onay bağlantısı gönderildi. E-postadaki bağlantıya dokunun. Onayladıktan sonra buraya dönüp TAMAM deyin.');
+                                if(!ok) return;
                                 var np = prompt('Yeni şifrenizi girin (en az 6 karakter):');
                                 if(!np) return;
-                                await resetApi('password-reset-confirm',{role:role,phone:phone,code:String(code),newPassword:String(np)});
+                                await resetApi('password-reset-confirm',{role:role,phone:phone,newPassword:String(np)});
                                 alert('Şifreniz değiştirildi. Yeni şifrenizle giriş yapabilirsiniz.');
                                 try { localStorage.removeItem('rota_customer'); localStorage.removeItem('rota_driver'); localStorage.removeItem('rota_driver_session'); localStorage.removeItem('rota_customer_session'); } catch(e) {}
                                 if(pass) pass.value = '';
