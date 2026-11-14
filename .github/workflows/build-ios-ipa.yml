@@ -1,23 +1,36 @@
-name: Build ROTA iPhone IPA
+name: Build and Upload ROTA iOS to TestFlight
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ main ]
-    paths:
-      - 'ios-native/**'
-      - '.github/workflows/build-ios-ipa.yml'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  build:
+  testflight:
     runs-on: macos-latest
+
+    env:
+      APPLE_KEY_ID: ${{ secrets.APPLE_KEY_ID }}
+      APPLE_ISSUER_ID: ${{ secrets.APPLE_ISSUER_ID }}
+      APPLE_API_PRIVATE_KEY: ${{ secrets.APPLE_API_PRIVATE_KEY }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Check Apple secrets
+        shell: bash
+        run: |
+          missing=0
+          for name in APPLE_KEY_ID APPLE_ISSUER_ID APPLE_API_PRIVATE_KEY APPLE_TEAM_ID; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing GitHub Actions secret: $name"
+              missing=1
+            fi
+          done
+          exit $missing
 
       - name: Install XcodeGen
         run: brew install xcodegen
@@ -27,41 +40,132 @@ jobs:
           cd ios-native
           xcodegen generate
 
-      - name: Build customer app
+      - name: Install App Store Connect API key
+        shell: bash
         run: |
-          xcodebuild             -project ios-native/ROTA.xcodeproj             -scheme ROTAMusteri             -configuration Release             -sdk iphoneos             -derivedDataPath build/customer             CODE_SIGNING_ALLOWED=NO             CODE_SIGNING_REQUIRED=NO             build
+          mkdir -p "$HOME/.appstoreconnect/private_keys"
+          KEY_PATH="$HOME/.appstoreconnect/private_keys/AuthKey_${APPLE_KEY_ID}.p8"
+          printf '%s' "$APPLE_API_PRIVATE_KEY" > "$KEY_PATH"
+          chmod 600 "$KEY_PATH"
+          echo "ASC_KEY_PATH=$KEY_PATH" >> "$GITHUB_ENV"
 
-      - name: Build driver app
+      - name: Create export options
+        shell: bash
         run: |
-          xcodebuild             -project ios-native/ROTA.xcodeproj             -scheme ROTASurucu             -configuration Release             -sdk iphoneos             -derivedDataPath build/driver             CODE_SIGNING_ALLOWED=NO             CODE_SIGNING_REQUIRED=NO             build
+          cat > ExportOptions.plist <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>app-store-connect</string>
+            <key>signingStyle</key>
+            <string>automatic</string>
+            <key>teamID</key>
+            <string>${APPLE_TEAM_ID}</string>
+            <key>uploadSymbols</key>
+            <true/>
+          </dict>
+          </plist>
+          EOF
 
-      - name: Package IPA files
+      - name: Archive customer app
+        shell: bash
         run: |
-          mkdir -p out/customer/Payload out/driver/Payload
-          cp -R build/customer/Build/Products/Release-iphoneos/ROTA-Musteri.app out/customer/Payload/
-          cp -R build/driver/Build/Products/Release-iphoneos/ROTA-Surucu.app out/driver/Payload/
+          xcodebuild \
+            -project ios-native/ROTA.xcodeproj \
+            -scheme ROTAMusteri \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -archivePath build/ROTA-Musteri.xcarchive \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            CODE_SIGN_STYLE=Automatic \
+            CURRENT_PROJECT_VERSION="${GITHUB_RUN_NUMBER}" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" \
+            -authenticationKeyID "$APPLE_KEY_ID" \
+            -authenticationKeyIssuerID "$APPLE_ISSUER_ID" \
+            archive
 
-          cd out/customer
-          zip -qry ../ROTA-Musteri.ipa Payload
-          cd ../driver
-          zip -qry ../ROTA-Surucu.ipa Payload
-          cd ../..
+      - name: Export customer IPA
+        shell: bash
+        run: |
+          mkdir -p out/customer
+          xcodebuild \
+            -exportArchive \
+            -archivePath build/ROTA-Musteri.xcarchive \
+            -exportPath out/customer \
+            -exportOptionsPlist ExportOptions.plist \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" \
+            -authenticationKeyID "$APPLE_KEY_ID" \
+            -authenticationKeyIssuerID "$APPLE_ISSUER_ID"
 
-          ls -lh out/*.ipa
+      - name: Archive driver app
+        shell: bash
+        run: |
+          xcodebuild \
+            -project ios-native/ROTA.xcodeproj \
+            -scheme ROTASurucu \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -archivePath build/ROTA-Surucu.xcarchive \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            CODE_SIGN_STYLE=Automatic \
+            CURRENT_PROJECT_VERSION="${GITHUB_RUN_NUMBER}" \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" \
+            -authenticationKeyID "$APPLE_KEY_ID" \
+            -authenticationKeyIssuerID "$APPLE_ISSUER_ID" \
+            archive
 
-      - name: Upload build artifacts
+      - name: Export driver IPA
+        shell: bash
+        run: |
+          mkdir -p out/driver
+          xcodebuild \
+            -exportArchive \
+            -archivePath build/ROTA-Surucu.xcarchive \
+            -exportPath out/driver \
+            -exportOptionsPlist ExportOptions.plist \
+            -allowProvisioningUpdates \
+            -authenticationKeyPath "$ASC_KEY_PATH" \
+            -authenticationKeyID "$APPLE_KEY_ID" \
+            -authenticationKeyIssuerID "$APPLE_ISSUER_ID"
+
+      - name: Find exported IPA files
+        shell: bash
+        run: |
+          CUSTOMER_IPA="$(find out/customer -name '*.ipa' -print -quit)"
+          DRIVER_IPA="$(find out/driver -name '*.ipa' -print -quit)"
+          test -n "$CUSTOMER_IPA"
+          test -n "$DRIVER_IPA"
+          echo "CUSTOMER_IPA=$CUSTOMER_IPA" >> "$GITHUB_ENV"
+          echo "DRIVER_IPA=$DRIVER_IPA" >> "$GITHUB_ENV"
+
+      - name: Upload customer to TestFlight
+        shell: bash
+        run: |
+          xcrun altool --upload-app \
+            --type ios \
+            --file "$CUSTOMER_IPA" \
+            --apiKey "$APPLE_KEY_ID" \
+            --apiIssuer "$APPLE_ISSUER_ID"
+
+      - name: Upload driver to TestFlight
+        shell: bash
+        run: |
+          xcrun altool --upload-app \
+            --type ios \
+            --file "$DRIVER_IPA" \
+            --apiKey "$APPLE_KEY_ID" \
+            --apiIssuer "$APPLE_ISSUER_ID"
+
+      - name: Upload signed IPA artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: rota-ios-ipa
-          path: out/*.ipa
+          name: rota-ios-signed-ipa
+          path: |
+            ${{ env.CUSTOMER_IPA }}
+            ${{ env.DRIVER_IPA }}
           if-no-files-found: error
-
-      - name: Publish direct IPA downloads
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          if ! gh release view ios-ipa >/dev/null 2>&1; then
-            gh release create ios-ipa               --title "ROTA iPhone IPA"               --notes "SideStore veya AltStore ile ucretsiz imzalanip kurulabilen ROTA iPhone paketleri."
-          fi
-          gh release upload ios-ipa out/ROTA-Musteri.ipa --clobber
-          gh release upload ios-ipa out/ROTA-Surucu.ipa --clobber
