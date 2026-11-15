@@ -256,19 +256,30 @@ class MainActivity : AppCompatActivity() {
                         };
                       }
 
+                      var nearbyAutoFitDone=false;
                       function drawNearbyDrivers(list) {
                         clearNearbyMarkers();
                         try {
                           if (typeof map === 'undefined' || !map) return;
+                          var pts=[];
+
+                          // Canlı sayfanın kendi Leaflet sürücü katmanını kullan.
+                          try {
+                            if (typeof driversLayer !== 'undefined' && driversLayer && driversLayer.clearLayers) {
+                              driversLayer.clearLayers();
+                            }
+                          } catch(e) {}
+
                           (list || []).forEach(function(d) {
                             var lat = Number(d.lat), lng = Number(d.lng);
                             if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+                            pts.push([lat,lng]);
 
-                            if(isGoogleMap() && typeof google.maps.Marker==='function'){
+                            if (isGoogleMap() && typeof google.maps.Marker==='function') {
                               var gm=new google.maps.Marker({
                                 position:{lat:lat,lng:lng},
                                 map:map,
-                                icon:makeGoogleCarIcon(34,false),
+                                icon:makeGoogleCarIcon(38,false),
                                 zIndex:5000,
                                 optimized:false,
                                 title:'Çevrimiçi sürücü'
@@ -278,23 +289,39 @@ class MainActivity : AppCompatActivity() {
                             }
 
                             if (typeof L !== 'undefined' && L.marker) {
-                              var pane='rotaNearbyPane';
-                              try{
-                                if(map.createPane && !map.getPane(pane)){
-                                  var pp=map.createPane(pane);
-                                  pp.style.zIndex='6200';
-                                }
-                              }catch(e){}
-                              var icon = L.divIcon({
+                              var icon=L.divIcon({
                                 className:'',
-                                html:'<div style="width:32px;height:32px;border-radius:50%;background:#fff;border:2px solid #081329;display:flex;align-items:center;justify-content:center;font-size:17px;box-shadow:0 3px 10px rgba(0,0,0,.22)">🚗</div>',
-                                iconSize:[32,32],
-                                iconAnchor:[16,16]
+                                html:'<div style="width:38px;height:38px;border-radius:50%;background:#081329;border:3px solid #f6be35;display:flex;align-items:center;justify-content:center;font-size:21px;box-shadow:0 0 0 4px rgba(246,190,53,.18),0 4px 12px rgba(0,0,0,.3)">🚗</div>',
+                                iconSize:[38,38],
+                                iconAnchor:[19,19]
                               });
-                              var lm = L.marker([lat,lng], {icon:icon,pane:pane,zIndexOffset:2500}).addTo(map);
-                              nearbyMarkers.push(lm);
+                              var lm=null;
+                              try {
+                                if (typeof driversLayer !== 'undefined' && driversLayer && driversLayer.addLayer) {
+                                  lm=L.marker([lat,lng],{icon:icon,zIndexOffset:4000});
+                                  driversLayer.addLayer(lm);
+                                } else {
+                                  lm=L.marker([lat,lng],{icon:icon,zIndexOffset:4000}).addTo(map);
+                                  nearbyMarkers.push(lm);
+                                }
+                              } catch(e) {}
                             }
                           });
+
+                          // İlk açılışta müşteri ve yakındaki araçları aynı kadraja getir.
+                          if (!nearbyAutoFitDone && pts.length && typeof L!=='undefined' && L.latLngBounds && map.fitBounds) {
+                            try {
+                              if (typeof pickup!=='undefined' && pickup &&
+                                  Number.isFinite(Number(pickup.lat)) && Number.isFinite(Number(pickup.lng))) {
+                                pts.push([Number(pickup.lat),Number(pickup.lng)]);
+                              }
+                              var b=L.latLngBounds(pts);
+                              if(b.isValid()){
+                                map.fitBounds(b,{paddingTopLeft:[35,190],paddingBottomRight:[35,330],maxZoom:15});
+                                nearbyAutoFitDone=true;
+                              }
+                            } catch(e) {}
+                          }
                         } catch(e) {}
                       }
 
@@ -480,6 +507,13 @@ class MainActivity : AppCompatActivity() {
                         },function(){},{enableHighAccuracy:true,maximumAge:8000,timeout:12000});
                       }
 
+                      // Canlı sayfanın eski /api/drivers yenilemesini de bu yeni katmana yönlendir.
+                      try {
+                        if (typeof refreshDrivers === 'function') {
+                          refreshDrivers = function(){ pollNearbyDrivers(); };
+                        }
+                      } catch(e) {}
+
                       var lastPreviewKey='';
                       async function previewSelectedRoute(){
                         try{
@@ -507,12 +541,12 @@ class MainActivity : AppCompatActivity() {
                           '.addr small{font-size:12px!important}.addr b{font-size:18px!important}'+
                           '.search{margin-top:10px!important;background:rgba(255,255,255,.96)!important}'+
                           '.search input{font-size:18px!important;padding:16px 10px!important}'+
-                          '.sheet{left:0!important;right:0!important;bottom:0!important;border-radius:32px 32px 0 0!important;padding:13px 18px 20px!important;box-shadow:0 -10px 30px rgba(15,23,42,.14)!important}'+
+                          '.sheet{left:0!important;right:0!important;bottom:0!important;border-radius:32px 32px 0 0!important;padding:13px 18px 18px!important;box-shadow:0 -10px 30px rgba(15,23,42,.14)!important;max-height:48vh!important;overflow-y:auto!important;overscroll-behavior:contain!important}'+
                           '.brand{font-size:21px!important}.route{font-size:14px!important;margin-top:5px!important}'+
-                          '.vehicles{display:grid!important;grid-template-columns:1fr 1fr!important;gap:10px!important;overflow:visible!important}'+
-                          '.v{width:auto!important;min-width:0!important;flex:none!important;border-radius:20px!important;padding:13px!important;min-height:92px!important}'+
+                          '.vehicles{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important;overflow:visible!important}'+
+                          '.v{width:auto!important;min-width:0!important;flex:none!important;border-radius:18px!important;padding:10px!important;min-height:78px!important}'+
                           '.v.on{border:3px solid #f6be35!important;background:#fffdf5!important}'+
-                          '.call{border-radius:22px!important;padding:17px!important;font-size:19px!important;box-shadow:0 6px 18px rgba(246,190,53,.28)!important}'+
+                          '.call{position:sticky!important;bottom:8px!important;z-index:30!important;border-radius:22px!important;padding:15px!important;font-size:19px!important;box-shadow:0 6px 18px rgba(246,190,53,.32)!important;margin-bottom:8px!important}'+
                           '#rotaLiveDriverBox{top:14px!important;left:18px!important;right:18px!important;border-radius:22px!important;padding:13px 16px!important}'+
                           '#rotaChatButton{bottom:24px!important;border-radius:24px!important;padding:13px 17px!important}';
                         document.head.appendChild(st);
