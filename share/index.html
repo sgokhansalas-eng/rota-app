@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ROTA Canlı Yolculuk Takibi</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{--navy:#081329;--gold:#f6be35;--muted:#64748b}
+*{box-sizing:border-box}html,body{margin:0;height:100%;font-family:Arial,sans-serif;background:#eef2f7;color:#111827}
+#map{position:fixed;inset:0}.top{position:fixed;z-index:1000;left:14px;right:14px;top:14px;background:rgba(255,255,255,.97);border-radius:18px;padding:11px 13px;box-shadow:0 8px 22px rgba(15,23,42,.16);display:flex;justify-content:space-between;align-items:center}.logo{font-size:21px;font-weight:900;color:var(--navy)}.live{font-size:12px;font-weight:800;background:#dcfce7;color:#166534;border-radius:999px;padding:7px 10px}
+.card{position:fixed;z-index:1000;left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));background:rgba(255,255,255,.98);border-radius:20px;padding:13px;box-shadow:0 -8px 25px rgba(15,23,42,.18)}.status{font-size:20px;font-weight:900;color:var(--navy)}.dest{margin-top:5px;font-size:14px;color:#334155}.meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.pill{background:#f1f5f9;border-radius:12px;padding:8px 10px;font-size:12px;font-weight:800}.updated{margin-top:8px;font-size:11px;color:var(--muted)}
+.car{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;background:var(--navy);border:3px solid var(--gold);font-size:25px;box-shadow:0 5px 16px rgba(0,0,0,.25)}
+.err{position:fixed;z-index:2000;inset:0;display:none;align-items:center;justify-content:center;padding:28px;background:#f8fafc;text-align:center}.err.show{display:flex}.errbox{max-width:420px;background:#fff;border-radius:22px;padding:22px;box-shadow:0 10px 30px rgba(15,23,42,.15)}.errtitle{font-size:22px;font-weight:900}.errmsg{margin-top:8px;color:#64748b}
+</style>
+</head>
+<body>
+<div id="map"></div>
+<div class="top"><div class="logo">ROTA</div><div id="live" class="live">Canlı takip</div></div>
+<div class="card">
+  <div id="status" class="status">Yolculuk bilgisi yükleniyor…</div>
+  <div id="dest" class="dest"></div>
+  <div class="meta"><div id="driverState" class="pill">Sürücü konumu bekleniyor</div><div id="tripState" class="pill"></div></div>
+  <div id="updated" class="updated"></div>
+</div>
+<div id="err" class="err"><div class="errbox"><div class="errtitle">ROTA</div><div id="errmsg" class="errmsg">Takip bağlantısı açılamadı.</div></div></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const CORE='https://ftltemgtzkjfnkxsxxmd.supabase.co/functions/v1/rota2-core';
+const GEO='https://ftltemgtzkjfnkxsxxmd.supabase.co/functions/v1/rota2-geo';
+const token=new URL(location.href).searchParams.get('token')||'';
+const map=L.map('map',{zoomControl:false,attributionControl:true}).setView([41.0082,28.9784],10);
+L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+let pickupMarker=null,destMarker=null,driverMarker=null,routeLayer=null,firstFit=true;
+function carIcon(){return L.divIcon({className:'',html:'<div class="car">🚗</div>',iconSize:[46,46],iconAnchor:[23,23]})}
+function labelStatus(s){if(s==='assigned')return 'Sürücü aranıyor';if(s==='accepted')return 'Yolculuk aktif';if(s==='completed')return 'Yolculuk tamamlandı';if(s==='cancelled')return 'Yolculuk iptal edildi';return 'Yolculuk durumu'}
+async function route(a,b){try{const r=await fetch(GEO+'?action=route&fromLat='+encodeURIComponent(a.lat)+'&fromLng='+encodeURIComponent(a.lng)+'&toLat='+encodeURIComponent(b.lat)+'&toLng='+encodeURIComponent(b.lng));const j=await r.json();if(!r.ok||!j.geometry)return null;return j}catch{return null}}
+function showErr(msg){document.getElementById('errmsg').textContent=msg||'Takip bağlantısı açılamadı.';document.getElementById('err').classList.add('show')}
+async function refresh(){
+  if(!token){showErr('Takip bağlantısı geçersiz.');return}
+  try{
+    const r=await fetch(CORE+'?action=trip-share-public&token='+encodeURIComponent(token),{cache:'no-store'});
+    const j=await r.json();
+    if(!r.ok||!j.ok){showErr(j.error||'Takip bağlantısı açılamadı.');return}
+    const t=j.trip||{},p=t.pickup,d=t.destinationLocation,drv=t.driverLocation;
+    document.getElementById('status').textContent=labelStatus(t.status);
+    document.getElementById('dest').textContent=t.destination?'Varış: '+t.destination:'';
+    document.getElementById('tripState').textContent=t.status==='completed'?'Tamamlandı':t.status==='cancelled'?'İptal edildi':'Canlı';
+    if(p&&Number.isFinite(+p.lat)&&Number.isFinite(+p.lng)){if(!pickupMarker)pickupMarker=L.circleMarker([+p.lat,+p.lng],{radius:7,weight:3,color:'#081329',fillColor:'#fff',fillOpacity:1}).addTo(map);else pickupMarker.setLatLng([+p.lat,+p.lng])}
+    if(d&&Number.isFinite(+d.lat)&&Number.isFinite(+d.lng)){if(!destMarker)destMarker=L.circleMarker([+d.lat,+d.lng],{radius:7,weight:3,color:'#111',fillColor:'#f6be35',fillOpacity:1}).addTo(map);else destMarker.setLatLng([+d.lat,+d.lng])}
+    if(drv&&Number.isFinite(+drv.lat)&&Number.isFinite(+drv.lng)){
+      const pos=[+drv.lat,+drv.lng];
+      if(!driverMarker)driverMarker=L.marker(pos,{icon:carIcon(),zIndexOffset:10000}).addTo(map);else driverMarker.setLatLng(pos);
+      document.getElementById('driverState').textContent='Sürücü canlı konumda';
+      document.getElementById('updated').textContent='Son konum: '+new Date(drv.updatedAt||Date.now()).toLocaleTimeString('tr-TR');
+      const to=t.status==='accepted'&&d?d:p;
+      if(to){const rr=await route({lat:+drv.lat,lng:+drv.lng},{lat:+to.lat,lng:+to.lng});if(rr&&rr.geometry){if(routeLayer)routeLayer.remove();routeLayer=L.polyline(rr.geometry.map(x=>[x[1],x[0]]),{color:'#111',weight:6,opacity:.9}).addTo(map)}}
+    }else document.getElementById('driverState').textContent=t.status==='assigned'?'Sürücü aranıyor':'Sürücü konumu bekleniyor';
+    if(firstFit){const pts=[];if(p)pts.push([+p.lat,+p.lng]);if(d)pts.push([+d.lat,+d.lng]);if(drv)pts.push([+drv.lat,+drv.lng]);if(pts.length>1)map.fitBounds(pts,{padding:[55,55]});else if(pts.length===1)map.setView(pts[0],14);firstFit=false}
+    if(t.status==='completed'||t.status==='cancelled')document.getElementById('live').textContent='Takip sona erdi';
+  }catch(e){showErr('Canlı takip bilgisi alınamadı.')}
+}
+refresh();setInterval(refresh,3000);
+</script>
+</body>
+</html>
