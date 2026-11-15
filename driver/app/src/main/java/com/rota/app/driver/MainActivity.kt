@@ -183,6 +183,9 @@ class MainActivity : AppCompatActivity() {
                       }
                       function did(){
                         var s=state();
+                        try{
+                          if(typeof DRIVER_ID!=='undefined' && DRIVER_ID) return String(DRIVER_ID);
+                        }catch(e){}
                         return localStorage.getItem('rota_driver_id')||localStorage.getItem('driver_id')||s.driverId||s.driver_id||s.id||'';
                       }
                       function stok(){
@@ -388,7 +391,11 @@ class MainActivity : AppCompatActivity() {
                             wrapped.__rotaNativeWrapped=true;
                             window.acceptTrip=wrapped;
                           }
-                          if((typeof online!=='undefined' && online) || activeTrip) nativeStartTracking();
+                          var isOnline=false;
+                          try{
+                            isOnline=(typeof online!=='undefined' && online===true) || localStorage.getItem('rota_driver_online')==='1';
+                          }catch(e){}
+                          if(isOnline || activeTrip) nativeStartTracking();
                           else nativeStopTracking();
                         }catch(e){}
                       },1000);
