@@ -28,7 +28,7 @@
 <script>
 const CORE='https://ftltemgtzkjfnkxsxxmd.supabase.co/functions/v1/rota2-core';
 const GEO='https://ftltemgtzkjfnkxsxxmd.supabase.co/functions/v1/rota2-geo';
-const token=new URL(location.href).searchParams.get('token')||'';
+const decodedHref=decodeURIComponent(location.href);const token=((decodedHref.match(/[?&]token=([^&#]+)/)||[])[1]||'');
 const map=L.map('map',{zoomControl:false,attributionControl:true}).setView([41.0082,28.9784],10);
 L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
 let pickupMarker=null,destMarker=null,driverMarker=null,routeLayer=null,firstFit=true;
