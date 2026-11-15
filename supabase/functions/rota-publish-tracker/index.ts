@@ -1,0 +1,1 @@
+Deno.serve(()=>Response.json({ok:false,error:"disabled"},{status:410}));
