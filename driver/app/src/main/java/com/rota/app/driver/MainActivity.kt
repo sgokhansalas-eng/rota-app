@@ -65,17 +65,19 @@ class MainActivity : AppCompatActivity() {
                         putExtra(LocationTrackingService.EXTRA_DRIVER_ID, driverId)
                         putExtra(LocationTrackingService.EXTRA_SESSION_TOKEN, sessionToken)
                     }
-                    ContextCompat.startForegroundService(this@MainActivity, i)
+                    try {
+                        ContextCompat.startForegroundService(this@MainActivity, i)
+                    } catch (_: Exception) {
+                        // Android foreground-service restrictions must never crash the app.
+                    }
                 }
             }
 
             @JavascriptInterface
             fun stopTracking() {
                 runOnUiThread {
-                    val i = Intent(this@MainActivity, LocationTrackingService::class.java).apply {
-                        action = LocationTrackingService.ACTION_STOP
-                    }
-                    startService(i)
+                    val i = Intent(this@MainActivity, LocationTrackingService::class.java)
+                    stopService(i)
                 }
             }
         }, "RotaNative")

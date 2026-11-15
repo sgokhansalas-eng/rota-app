@@ -42,14 +42,6 @@ class LocationTrackingService : Service(), LocationListener {
         super.onCreate()
         locationManager = getSystemService(LOCATION_SERVICE) as LocationManager
         createChannel()
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_menu_mylocation)
-            .setContentTitle("ROTA Sürücü")
-            .setContentText("Müşteriye canlı konumunuz gönderiliyor")
-            .setOngoing(true)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .build()
-        startForeground(NOTIFICATION_ID, notification)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -82,6 +74,21 @@ class LocationTrackingService : Service(), LocationListener {
             stopSelf()
             return
         }
+
+        try {
+            val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+                .setSmallIcon(android.R.drawable.ic_menu_mylocation)
+                .setContentTitle("ROTA Sürücü")
+                .setContentText("Canlı konumunuz müşterilere gönderiliyor")
+                .setOngoing(true)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .build()
+            startForeground(NOTIFICATION_ID, notification)
+        } catch (_: Exception) {
+            stopSelf()
+            return
+        }
+
         try { locationManager.removeUpdates(this) } catch (_: Exception) {}
         try {
             locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 2500L, 3f, this)
