@@ -2,6 +2,12 @@ name: Build and Upload ROTA iOS to TestFlight
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "ios-native/**"
+      - ".github/workflows/build-ios-ipa.yml"
 
 permissions:
   contents: read
