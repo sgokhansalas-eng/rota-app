@@ -40,6 +40,9 @@ targets:
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_CFBundleDisplayName: "ROTA Sürücü"
         INFOPLIST_KEY_NSLocationWhenInUseUsageDescription: "ROTA Sürücü, müşteriye yönlendirme ve sürüş işlemleri için konum izninizi kullanır."
+        INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription: "ROTA Sürücü, çevrimiçi olduğunuzda müşterilerin sizi canlı haritada görebilmesi ve sürüş sırasında konumunuzu güncelleyebilmesi için arka planda konum izninizi kullanır."
+        INFOPLIST_KEY_UIBackgroundModes:
+          - location
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UIRequiresFullScreen: YES
         CODE_SIGN_STYLE: Automatic
