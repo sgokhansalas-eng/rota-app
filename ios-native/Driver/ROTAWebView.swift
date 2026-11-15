@@ -1,5 +1,6 @@
 import SwiftUI
 import WebKit
+import CoreLocation
 
 struct ROTAWebView: UIViewRepresentable {
     let urlString: String
@@ -100,6 +101,7 @@ struct ROTAWebView: UIViewRepresentable {
         let webView = WKWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = context.coordinator
         webView.uiDelegate = context.coordinator
+        context.coordinator.attach(webView)
         webView.allowsBackForwardNavigationGestures = true
         webView.scrollView.contentInsetAdjustmentBehavior = .automatic
 
@@ -111,7 +113,120 @@ struct ROTAWebView: UIViewRepresentable {
 
     func updateUIView(_ webView: WKWebView, context: Context) {}
 
-    final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
+    final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate, CLLocationManagerDelegate {
+        private weak var webView: WKWebView?
+        private let locationManager = CLLocationManager()
+        private var driverId = UserDefaults.standard.string(forKey: "rota.driverId") ?? ""
+        private var sessionToken = ""
+        private var lastHeartbeatAt = Date.distantPast
+
+        func attach(_ webView: WKWebView) {
+            self.webView = webView
+            locationManager.delegate = self
+            locationManager.desiredAccuracy = kCLLocationAccuracyBestForNavigation
+            locationManager.distanceFilter = 5
+            locationManager.activityType = .automotiveNavigation
+            locationManager.pausesLocationUpdatesAutomatically = false
+            locationManager.allowsBackgroundLocationUpdates = true
+
+            switch locationManager.authorizationStatus {
+            case .notDetermined:
+                locationManager.requestWhenInUseAuthorization()
+            case .authorizedWhenInUse:
+                locationManager.startUpdatingLocation()
+                locationManager.requestAlwaysAuthorization()
+            case .authorizedAlways:
+                locationManager.startUpdatingLocation()
+            default:
+                break
+            }
+        }
+
+        private func refreshWebIdentity() {
+            guard let webView else { return }
+            let script = #"""
+            (function(){
+              function state(){
+                var keys=['rota_driver','driver','rotaDriver'];
+                for(var i=0;i<keys.length;i++){
+                  try{
+                    var v=JSON.parse(localStorage.getItem(keys[i])||'null');
+                    if(v)return v;
+                  }catch(e){}
+                }
+                return {};
+              }
+              var s=state();
+              var driverId=localStorage.getItem('rota_driver_id')||localStorage.getItem('driver_id')||s.driverId||s.driver_id||s.id||'';
+              var sessionToken=localStorage.getItem('rota_driver_session')||localStorage.getItem('driver_session')||s.sessionToken||s.session_token||s.token||'';
+              return JSON.stringify({driverId:String(driverId||''),sessionToken:String(sessionToken||'')});
+            })();
+            """#
+            webView.evaluateJavaScript(script) { [weak self] value, _ in
+                guard let self, let json = value as? String, let data = json.data(using: .utf8),
+                      let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
+                let id = (obj["driverId"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+                let token = obj["sessionToken"] as? String ?? ""
+                if !id.isEmpty {
+                    self.driverId = id
+                    UserDefaults.standard.set(id, forKey: "rota.driverId")
+                }
+                if !token.isEmpty { self.sessionToken = token }
+            }
+        }
+
+        private func sendHeartbeat(_ location: CLLocation) {
+            let now = Date()
+            if now.timeIntervalSince(lastHeartbeatAt) < 3 { return }
+            lastHeartbeatAt = now
+
+            if driverId.isEmpty {
+                refreshWebIdentity()
+                return
+            }
+
+            guard let url = URL(string: "https://ftltemgtzkjfnkxsxxmd.supabase.co/functions/v1/rota2-core?action=heartbeat") else { return }
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+            var body: [String: Any] = [
+                "driverId": driverId,
+                "lat": location.coordinate.latitude,
+                "lng": location.coordinate.longitude,
+                "accuracy": location.horizontalAccuracy,
+                "source": "ios-native"
+            ]
+            if !sessionToken.isEmpty { body["sessionToken"] = sessionToken }
+            request.httpBody = try? JSONSerialization.data(withJSONObject: body)
+
+            URLSession.shared.dataTask(with: request).resume()
+        }
+
+        func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+            switch manager.authorizationStatus {
+            case .authorizedAlways:
+                manager.startUpdatingLocation()
+            case .authorizedWhenInUse:
+                manager.startUpdatingLocation()
+                manager.requestAlwaysAuthorization()
+            case .notDetermined:
+                manager.requestWhenInUseAuthorization()
+            default:
+                manager.stopUpdatingLocation()
+            }
+        }
+
+        func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+            guard let location = locations.last, location.horizontalAccuracy >= 0 else { return }
+            refreshWebIdentity()
+            sendHeartbeat(location)
+        }
+
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+            refreshWebIdentity()
+        }
+
         func webView(_ webView: WKWebView,
                      decidePolicyFor navigationAction: WKNavigationAction,
                      decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
