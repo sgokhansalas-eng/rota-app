@@ -388,7 +388,8 @@ class MainActivity : AppCompatActivity() {
                             wrapped.__rotaNativeWrapped=true;
                             window.acceptTrip=wrapped;
                           }
-                          if(activeTrip) nativeStartTracking();
+                          if((typeof online!=='undefined' && online) || activeTrip) nativeStartTracking();
+                          else nativeStopTracking();
                         }catch(e){}
                       },1000);
 

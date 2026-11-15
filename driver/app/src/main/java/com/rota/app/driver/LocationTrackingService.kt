@@ -5,6 +5,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
+import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
@@ -35,6 +36,7 @@ class LocationTrackingService : Service(), LocationListener {
     @Volatile private var driverId: String = ""
     @Volatile private var sessionToken: String = ""
     @Volatile private var lastSentAt = 0L
+    private val prefs by lazy { getSharedPreferences("rota_live_location", Context.MODE_PRIVATE) }
 
     override fun onCreate() {
         super.onCreate()
@@ -52,13 +54,24 @@ class LocationTrackingService : Service(), LocationListener {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) {
+            prefs.edit().clear().apply()
             stopTracking()
             stopSelf()
             return START_NOT_STICKY
         }
-        driverId = intent?.getStringExtra(EXTRA_DRIVER_ID).orEmpty().ifBlank { driverId }
-        sessionToken = intent?.getStringExtra(EXTRA_SESSION_TOKEN).orEmpty().ifBlank { sessionToken }
-        if (driverId.isNotBlank()) startTracking()
+        driverId = intent?.getStringExtra(EXTRA_DRIVER_ID).orEmpty().ifBlank {
+            prefs.getString(EXTRA_DRIVER_ID, "").orEmpty().ifBlank { driverId }
+        }
+        sessionToken = intent?.getStringExtra(EXTRA_SESSION_TOKEN).orEmpty().ifBlank {
+            prefs.getString(EXTRA_SESSION_TOKEN, "").orEmpty().ifBlank { sessionToken }
+        }
+        if (driverId.isNotBlank()) {
+            prefs.edit()
+                .putString(EXTRA_DRIVER_ID, driverId)
+                .putString(EXTRA_SESSION_TOKEN, sessionToken)
+                .apply()
+            startTracking()
+        }
         return START_STICKY
     }
 

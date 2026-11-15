@@ -451,25 +451,50 @@ class MainActivity : AppCompatActivity() {
                         } catch(e) {}
                       }
 
-                      async function pollNearbyDrivers() {
-                        if (typeof CORE === 'undefined' || !CORE || !navigator.geolocation) return;
-                        navigator.geolocation.getCurrentPosition(async function(pos) {
-                          try {
-                            var r = await fetch(CORE + '?action=nearby-map-drivers', {
-                              method:'POST',
-                              headers:headers(),
-                              body:JSON.stringify({
-                                lat:Number(pos.coords.latitude),
-                                lng:Number(pos.coords.longitude),
-                                radiusKm:20
-                              })
-                            });
-                            var j = await r.json();
-                            if (!r.ok) return;
-                            drawNearbyDrivers(j.drivers || []);
-                          } catch(e) {}
-                        }, function(){}, {enableHighAccuracy:true, maximumAge:8000, timeout:12000});
+                      async function fetchNearbyAt(lat,lng){
+                        if(!Number.isFinite(lat)||!Number.isFinite(lng)||typeof CORE==='undefined'||!CORE)return;
+                        try{
+                          var r=await fetch(CORE+'?action=nearby-map-drivers',{
+                            method:'POST',
+                            headers:headers(),
+                            body:JSON.stringify({lat:lat,lng:lng,radiusKm:20})
+                          });
+                          var j=await r.json();
+                          if(!r.ok)return;
+                          drawNearbyDrivers(j.drivers||[]);
+                        }catch(e){}
                       }
+
+                      async function pollNearbyDrivers() {
+                        // Öncelik: müşterinin seçtiği alış noktası. GPS yalnızca yedek.
+                        try{
+                          if(typeof pickup!=='undefined' && pickup &&
+                             Number.isFinite(Number(pickup.lat)) && Number.isFinite(Number(pickup.lng))){
+                            await fetchNearbyAt(Number(pickup.lat),Number(pickup.lng));
+                            return;
+                          }
+                        }catch(e){}
+                        if(!navigator.geolocation)return;
+                        navigator.geolocation.getCurrentPosition(function(pos){
+                          fetchNearbyAt(Number(pos.coords.latitude),Number(pos.coords.longitude));
+                        },function(){},{enableHighAccuracy:true,maximumAge:8000,timeout:12000});
+                      }
+
+                      var lastPreviewKey='';
+                      async function previewSelectedRoute(){
+                        try{
+                          if(activeTripId()) return;
+                          if(typeof pickup==='undefined'||typeof target==='undefined'||!pickup||!target)return;
+                          var a=Number(pickup.lat),b=Number(pickup.lng),x=Number(target.lat),y=Number(target.lng);
+                          if(![a,b,x,y].every(Number.isFinite))return;
+                          var key=[a.toFixed(5),b.toFixed(5),x.toFixed(5),y.toFixed(5)].join('|');
+                          if(key===lastPreviewKey)return;
+                          lastPreviewKey=key;
+                          await drawLiveRoute(a,b,x,y);
+                        }catch(e){}
+                      }
+                      setInterval(previewSelectedRoute,1200);
+                      setTimeout(previewSelectedRoute,1800);
 
                       // Dat Dat benzeri daha temiz müşteri ekranı görünümü.
                       (function installCleanRotaUi(){
