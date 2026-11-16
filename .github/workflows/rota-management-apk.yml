@@ -1,0 +1,47 @@
+name: ROTA Management APK
+on:
+  push:
+    branches: [main]
+    paths:
+      - "admin/**"
+      - ".github/workflows/rota-management-apk.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-admin-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+      - name: Accept SDK licences and install Android 36
+        run: |
+          yes | sdkmanager --licenses >/dev/null || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0"
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.14.3"
+      - name: Compile ROTA Management APK
+        working-directory: admin
+        env:
+          ROTA_VERSION_CODE: "2"
+          ROTA_VERSION_NAME: "1.1.0"
+        run: gradle --no-daemon --stacktrace assembleDebug
+      - name: Upload unsigned-production-test APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ROTA-Yonetim-Onaylar-test-apk
+          path: admin/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+          retention-days: 14
