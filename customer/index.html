@@ -942,10 +942,10 @@ let rotaBasemap=null;
 try{
   if(typeof L.maplibreGL==='function'){
     rotaBasemap=L.maplibreGL({
-      style:'https://tiles.openfreemap.org/styles/liberty',
+      style:'https://tiles.openfreemap.org/styles/bright',
       attribution:'OpenFreeMap © OpenMapTiles Data from OpenStreetMap'
     }).addTo(map);
-    document.documentElement.dataset.rotaBasemap='openfreemap-liberty';
+    document.documentElement.dataset.rotaBasemap='openfreemap-bright';
   }else{
     throw new Error('MapLibre Leaflet bridge unavailable');
   }
