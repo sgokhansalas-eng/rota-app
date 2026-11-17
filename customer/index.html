@@ -57,6 +57,126 @@ body.nightMap #map{background:#18202b}
 #womenStatus{margin:4px 0!important;font-size:10px!important}
 </style>
 
+
+<style id="rota-compact52-style">
+/* Home screen: keep all primary controls on one viewport without vertical scrolling. */
+.sheet:not(.tripActive){
+  max-height:none!important;
+  overflow:hidden!important;
+  overscroll-behavior:none!important;
+  -webkit-overflow-scrolling:auto!important;
+  padding:3px 8px calc(5px + env(safe-area-inset-bottom))!important;
+  border-radius:18px 18px 0 0!important;
+}
+.sheet:not(.tripActive) .grab{
+  width:28px!important;height:3px!important;margin:0 auto 2px!important;
+}
+.sheet:not(.tripActive) .brand{
+  font-size:13px!important;line-height:1!important;margin:0!important;
+}
+.sheet:not(.tripActive) .routeText{
+  font-size:9px!important;line-height:1.05!important;
+  min-height:10px!important;margin:1px 0 2px!important;
+}
+.sheet:not(.tripActive) #r51Saved{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  margin:2px 0 3px!important;
+  border-radius:11px!important;
+}
+.sheet:not(.tripActive) .r51SavedHead{
+  grid-column:1/-1!important;
+  padding:5px 8px!important;
+  min-height:28px!important;
+  font-size:12px!important;
+}
+.sheet:not(.tripActive) #r51AllSaved{
+  font-size:10px!important;padding:2px 0!important;
+}
+.sheet:not(.tripActive) .r51SavedRow{
+  min-width:0!important;
+  min-height:38px!important;
+  padding:5px 7px!important;
+  gap:5px!important;
+  border-bottom:0!important;
+}
+.sheet:not(.tripActive) #r51Home{
+  border-right:1px solid #edf1f5!important;
+}
+.sheet:not(.tripActive) .r51SavedIcon{
+  width:18px!important;font-size:12px!important;
+}
+.sheet:not(.tripActive) .r51SavedTxt b{
+  font-size:11px!important;line-height:1!important;
+}
+.sheet:not(.tripActive) .r51SavedTxt small{
+  font-size:8px!important;line-height:1!important;margin-top:2px!important;
+}
+.sheet:not(.tripActive) .vehicles{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:3px!important;
+  margin-top:3px!important;
+}
+.sheet:not(.tripActive) .veh{
+  min-width:0!important;
+  min-height:42px!important;
+  padding:4px 4px!important;
+  border-radius:10px!important;
+  font-size:9px!important;
+  line-height:1!important;
+  overflow:hidden!important;
+}
+.sheet:not(.tripActive) .veh strong{
+  font-size:10px!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+.sheet:not(.tripActive) .veh small{
+  display:block!important;
+  font-size:7px!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+  margin-top:2px!important;
+}
+.sheet:not(.tripActive) #r51CallRow{
+  gap:5px!important;
+  margin-top:4px!important;
+}
+.sheet:not(.tripActive) #r51CallRow .call{
+  height:42px!important;
+  min-height:42px!important;
+  border-radius:11px!important;
+  font-size:11px!important;
+  padding:4px 5px!important;
+}
+.sheet:not(.tripActive) #womenStatus{
+  min-height:0!important;
+  max-height:12px!important;
+  overflow:hidden!important;
+  font-size:8px!important;
+  line-height:1!important;
+  margin:2px 0!important;
+}
+.sheet:not(.tripActive) #womenApply{
+  min-height:30px!important;
+  padding:5px 7px!important;
+  margin-top:2px!important;
+  border-radius:9px!important;
+  font-size:9px!important;
+}
+@media (max-height:760px){
+  .sheet:not(.tripActive) .r51SavedHead{padding:4px 7px!important;min-height:24px!important}
+  .sheet:not(.tripActive) .r51SavedRow{min-height:34px!important;padding:4px 6px!important}
+  .sheet:not(.tripActive) .veh{min-height:38px!important;padding:3px!important}
+  .sheet:not(.tripActive) #r51CallRow .call{height:38px!important;min-height:38px!important;font-size:10px!important}
+}
+</style>
+
 </head>
 <body>
 <div id="map"></div>
