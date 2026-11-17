@@ -636,6 +636,289 @@ body.nightMap #map{background:#18202b}
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<meta name="rota-google-maps-api-key" content="">
+<script id="rota-google-maps-bootstrap">
+(function(){
+  try{
+    const qs=new URLSearchParams(location.search);
+    const fromQuery=(qs.get('gmap_key')||'').trim();
+    if(fromQuery){
+      localStorage.setItem('rota_google_maps_key',fromQuery);
+      qs.delete('gmap_key');
+      const clean=location.pathname+(qs.toString()?('?'+qs.toString()):'')+location.hash;
+      history.replaceState(null,'',clean);
+    }
+    const meta=document.querySelector('meta[name="rota-google-maps-api-key"]');
+    const key=(fromQuery||localStorage.getItem('rota_google_maps_key')||(meta&&meta.content)||'').trim();
+    window.ROTA_GOOGLE_MAPS_API_KEY=key;
+    if(key){
+      document.write('<script src="https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(key)+'&v=weekly&language=tr&region=TR"><\\/script>');
+    }
+  }catch(e){}
+})();
+</script>
+<script id="rota-google-leaflet-compat">
+(function(){
+  if(!window.ROTA_GOOGLE_MAPS_API_KEY || !window.google || !google.maps) return;
+
+  const GM=google.maps;
+  const originalL=window.L;
+
+  function asLatLng(v){
+    if(Array.isArray(v)) return {lat:+v[0],lng:+v[1]};
+    if(v&&typeof v.lat==='function') return {lat:+v.lat(),lng:+v.lng()};
+    return {lat:+v.lat,lng:+v.lng};
+  }
+
+  function unwrapMap(target){
+    if(target&&target.__gmMap) return target.__gmMap;
+    if(target&&target._map&&target._map.__gmMap) return target._map.__gmMap;
+    return null;
+  }
+
+  function nightStyles(on){
+    if(!on) return null;
+    return [
+      {elementType:'geometry',stylers:[{color:'#1d2c4d'}]},
+      {elementType:'labels.text.fill',stylers:[{color:'#8ec3b9'}]},
+      {elementType:'labels.text.stroke',stylers:[{color:'#1a3646'}]},
+      {featureType:'administrative.country',elementType:'geometry.stroke',stylers:[{color:'#4b6878'}]},
+      {featureType:'administrative.land_parcel',elementType:'labels.text.fill',stylers:[{color:'#64779e'}]},
+      {featureType:'administrative.province',elementType:'geometry.stroke',stylers:[{color:'#4b6878'}]},
+      {featureType:'landscape.man_made',elementType:'geometry.stroke',stylers:[{color:'#334e87'}]},
+      {featureType:'landscape.natural',elementType:'geometry',stylers:[{color:'#023e58'}]},
+      {featureType:'poi',elementType:'geometry',stylers:[{color:'#283d6a'}]},
+      {featureType:'poi',elementType:'labels.text.fill',stylers:[{color:'#6f9ba5'}]},
+      {featureType:'poi',elementType:'labels.text.stroke',stylers:[{color:'#1d2c4d'}]},
+      {featureType:'poi.park',elementType:'geometry.fill',stylers:[{color:'#023e58'}]},
+      {featureType:'poi.park',elementType:'labels.text.fill',stylers:[{color:'#3C7680'}]},
+      {featureType:'road',elementType:'geometry',stylers:[{color:'#304a7d'}]},
+      {featureType:'road',elementType:'labels.text.fill',stylers:[{color:'#98a5be'}]},
+      {featureType:'road',elementType:'labels.text.stroke',stylers:[{color:'#1d2c4d'}]},
+      {featureType:'road.highway',elementType:'geometry',stylers:[{color:'#2c6675'}]},
+      {featureType:'road.highway',elementType:'geometry.stroke',stylers:[{color:'#255763'}]},
+      {featureType:'road.highway',elementType:'labels.text.fill',stylers:[{color:'#b0d5ce'}]},
+      {featureType:'road.highway',elementType:'labels.text.stroke',stylers:[{color:'#023e58'}]},
+      {featureType:'transit',elementType:'labels.text.fill',stylers:[{color:'#98a5be'}]},
+      {featureType:'transit',elementType:'labels.text.stroke',stylers:[{color:'#1d2c4d'}]},
+      {featureType:'transit.line',elementType:'geometry.fill',stylers:[{color:'#283d6a'}]},
+      {featureType:'transit.station',elementType:'geometry',stylers:[{color:'#3a4762'}]},
+      {featureType:'water',elementType:'geometry',stylers:[{color:'#0e1626'}]},
+      {featureType:'water',elementType:'labels.text.fill',stylers:[{color:'#4e6d70'}]}
+    ];
+  }
+
+  function mapFactory(id){
+    const el=typeof id==='string'?document.getElementById(id):id;
+    const gm=new GM.Map(el,{
+      center:{lat:39,lng:35},
+      zoom:6,
+      disableDefaultUI:true,
+      clickableIcons:false,
+      gestureHandling:'greedy',
+      backgroundColor:'#e9eef4'
+    });
+
+    const wrapper={
+      __gmMap:gm,
+      setView(pos,zoom){
+        const p=asLatLng(pos);
+        gm.setCenter(p);
+        if(Number.isFinite(+zoom)) gm.setZoom(+zoom);
+        return wrapper;
+      },
+      fitBounds(bounds,opt={}){
+        const b=bounds&&bounds.__gmBounds?bounds.__gmBounds:bounds;
+        const ptl=opt.paddingTopLeft||[0,0];
+        const pbr=opt.paddingBottomRight||[0,0];
+        gm.fitBounds(b,{
+          top:+ptl[1]||0,
+          left:+ptl[0]||0,
+          bottom:+pbr[1]||0,
+          right:+pbr[0]||0
+        });
+        if(Number.isFinite(+opt.maxZoom)){
+          const cap=+opt.maxZoom;
+          GM.event.addListenerOnce(gm,'idle',()=>{
+            const z=gm.getZoom();
+            if(Number.isFinite(z)&&z>cap) gm.setZoom(cap);
+          });
+        }
+        return wrapper;
+      }
+    };
+
+    function applyNight(){
+      const on=!!(document.body&&document.body.classList.contains('nightMap'));
+      gm.setOptions({styles:nightStyles(on)});
+    }
+    if(document.body){
+      applyNight();
+      new MutationObserver(applyNight).observe(document.body,{attributes:true,attributeFilter:['class']});
+    }else{
+      addEventListener('DOMContentLoaded',()=>{
+        applyNight();
+        new MutationObserver(applyNight).observe(document.body,{attributes:true,attributeFilter:['class']});
+      },{once:true});
+    }
+
+    return wrapper;
+  }
+
+  function layerGroup(){
+    return {
+      __gmGroup:true,
+      _map:null,
+      _items:new Set(),
+      addTo(map){this._map=map;return this},
+      clearLayers(){
+        this._items.forEach(x=>{try{x.remove()}catch(e){}});
+        this._items.clear();
+      }
+    };
+  }
+
+  function divIcon(opts){ return opts||{}; }
+
+  function markerIcon(icon){
+    const html=String(icon&&icon.html||'');
+    if(html.includes('carWrap')){
+      const assigned=html.includes('assigned');
+      return {
+        icon:{
+          path:GM.SymbolPath.CIRCLE,
+          scale:assigned?20:15,
+          fillColor:'#ffffff',
+          fillOpacity:.96,
+          strokeColor:assigned?'#111827':'#ffffff',
+          strokeOpacity:1,
+          strokeWeight:assigned?3:2
+        },
+        label:{
+          text:'🚗',
+          fontSize:assigned?'27px':'20px',
+          fontWeight:'700'
+        }
+      };
+    }
+    if(html.includes('pickMark')){
+      return {
+        icon:{
+          path:GM.SymbolPath.CIRCLE,
+          scale:10,
+          fillColor:'#ffffff',
+          fillOpacity:1,
+          strokeColor:'#111111',
+          strokeOpacity:1,
+          strokeWeight:4
+        }
+      };
+    }
+    if(html.includes('destMark')){
+      return {
+        icon:{
+          path:'M -7 -7 L 7 -7 L 7 7 L -7 7 z',
+          scale:1,
+          fillColor:'#111111',
+          fillOpacity:1,
+          strokeColor:'#ffffff',
+          strokeOpacity:1,
+          strokeWeight:2
+        }
+      };
+    }
+    return {};
+  }
+
+  function markerFactory(pos,opts={}){
+    let current=asLatLng(pos);
+    let gmMarker=null;
+    let group=null;
+
+    const wrapper={
+      addTo(target){
+        const gm=unwrapMap(target);
+        group=target&&target.__gmGroup?target:null;
+        const visual=markerIcon(opts.icon);
+        if(!gmMarker){
+          gmMarker=new GM.Marker({
+            position:current,
+            map:gm,
+            zIndex:Number.isFinite(+opts.zIndexOffset)?+opts.zIndexOffset:undefined,
+            ...visual
+          });
+        }else{
+          gmMarker.setMap(gm);
+        }
+        if(group) group._items.add(wrapper);
+        return wrapper;
+      },
+      setLatLng(pos2){
+        current=asLatLng(pos2);
+        if(gmMarker) gmMarker.setPosition(current);
+        return wrapper;
+      },
+      remove(){
+        if(gmMarker) gmMarker.setMap(null);
+        if(group) group._items.delete(wrapper);
+        return wrapper;
+      }
+    };
+    return wrapper;
+  }
+
+  function boundsFactory(points=[]){
+    const b=new GM.LatLngBounds();
+    (points||[]).forEach(p=>b.extend(asLatLng(p)));
+    return b;
+  }
+
+  function polylineFactory(points,opts={}){
+    const path=(points||[]).map(asLatLng);
+    let line=null;
+    let targetMap=null;
+    const wrapper={
+      addTo(target){
+        targetMap=unwrapMap(target);
+        line=new GM.Polyline({
+          path,
+          map:targetMap,
+          strokeColor:opts.color||'#111111',
+          strokeOpacity:Number.isFinite(+opts.opacity)?+opts.opacity:.95,
+          strokeWeight:Number.isFinite(+opts.weight)?+opts.weight:6,
+          clickable:false
+        });
+        return wrapper;
+      },
+      remove(){
+        if(line) line.setMap(null);
+        return wrapper;
+      },
+      getBounds(){
+        const b=new GM.LatLngBounds();
+        path.forEach(p=>b.extend(p));
+        return b;
+      }
+    };
+    return wrapper;
+  }
+
+  window.L={
+    map:mapFactory,
+    layerGroup,
+    tileLayer(){return {addTo(){return this}}},
+    divIcon,
+    marker:markerFactory,
+    latLngBounds:boundsFactory,
+    polyline:polylineFactory,
+    __leafletFallback:originalL
+  };
+
+  document.documentElement.dataset.mapProvider='google';
+})();
+</script>
+
 <script>
 const SUPA='https://ftltemgtzkjfnkxsxxmd.supabase.co';
 const CORE=SUPA+'/functions/v1/rota2-core';
