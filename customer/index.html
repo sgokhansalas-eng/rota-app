@@ -384,6 +384,13 @@ body.nightMap #map{background:#18202b}
 }
 </style>
 
+
+<style id="rota-openfreemap-night-style">
+body.nightMap #map .maplibregl-canvas{
+  filter:brightness(.58) contrast(1.18) saturate(.72)!important;
+}
+</style>
+
 </head>
 <body>
 <div id="map"></div>
@@ -636,8 +643,11 @@ body.nightMap #map{background:#18202b}
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link id="rota-maplibre-css" rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
+<script id="rota-maplibre-js" src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+<script id="rota-maplibre-leaflet-js" src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.4/leaflet-maplibre-gl.js"></script>
 
-<meta name="rota-google-maps-api-key" content="">
+<meta name="rota-google-maps-api-key" content="" data-disabled="api-free-openfreemap">
 <script id="rota-google-maps-bootstrap">
 (function(){
   try{
@@ -650,7 +660,7 @@ body.nightMap #map{background:#18202b}
       history.replaceState(null,'',clean);
     }
     const meta=document.querySelector('meta[name="rota-google-maps-api-key"]');
-    const key=(fromQuery||localStorage.getItem('rota_google_maps_key')||(meta&&meta.content)||'').trim();
+    const key='';
     window.ROTA_GOOGLE_MAPS_API_KEY=key;
     if(key){
       document.write('<script src="https://maps.googleapis.com/maps/api/js?key='+encodeURIComponent(key)+'&v=weekly&language=tr&region=TR"><\\/script>');
@@ -928,7 +938,24 @@ const $=id=>document.getElementById(id);
 let mode='login',pickup=null,target=null,vehicle='Normal Araç',routeKm=0,fare=0,activeTrip='',customerSettings={payment_method:'cash',quiet_ride:false,emergency_phone:null,corporate_id:null},currentPromo=null,driverCardLoadedFor='',driverArrivedAt=0,arrivalNotified=false,feedbackTripId='',feedbackRating=0;
 let nearbyLayer=L.layerGroup(),routeLayer=null,assignedMarker=null,pickMarker=null,destMarker=null;
 const map=L.map('map',{zoomControl:false,attributionControl:true}).setView([39,35],6);
-L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+let rotaBasemap=null;
+try{
+  if(typeof L.maplibreGL==='function'){
+    rotaBasemap=L.maplibreGL({
+      style:'https://tiles.openfreemap.org/styles/liberty',
+      attribution:'OpenFreeMap © OpenMapTiles Data from OpenStreetMap'
+    }).addTo(map);
+    document.documentElement.dataset.rotaBasemap='openfreemap-liberty';
+  }else{
+    throw new Error('MapLibre Leaflet bridge unavailable');
+  }
+}catch(e){
+  rotaBasemap=L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    maxZoom:19,
+    attribution:'© OpenStreetMap contributors'
+  }).addTo(map);
+  document.documentElement.dataset.rotaBasemap='osm-fallback';
+}
 nearbyLayer.addTo(map);
 
 function sess(){try{return JSON.parse(localStorage.getItem('rota_customer_v3')||'null')}catch{return null}}
