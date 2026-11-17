@@ -309,6 +309,81 @@ body.nightMap #map{background:#18202b}
 }
 </style>
 
+
+<style id="rota-ride-confirm-style">
+.rideConfirmModal{
+  display:none;position:fixed;inset:0;z-index:20000;
+  background:rgba(8,19,41,.62);backdrop-filter:blur(6px);
+  align-items:flex-end;justify-content:center;padding:14px;
+}
+.rideConfirmModal.show{display:flex}
+.rideConfirmCard{
+  position:relative;width:min(100%,430px);
+  background:#fff;border-radius:24px;padding:18px;
+  box-shadow:0 24px 80px rgba(0,0,0,.30);
+  border:1px solid rgba(15,27,45,.08);
+}
+.rideConfirmLogo{
+  text-align:center;font-size:26px;font-weight:950;font-style:italic;
+  letter-spacing:1px;color:#0F1B2D;margin-top:2px;line-height:1;
+}
+.rideConfirmLogo span{color:#E10600;font-style:normal;font-size:.8em}
+.rideConfirmClose{
+  position:absolute;right:14px;top:12px;width:34px;height:34px;border:0;
+  border-radius:50%;background:#f1f3f6;color:#334155;font-size:22px;line-height:1;
+}
+.rideConfirmTitle{
+  margin-top:14px;text-align:center;font-size:20px;font-weight:950;color:#0F1B2D;
+}
+.rideConfirmSub{
+  margin-top:4px;text-align:center;font-size:12px;color:#718096;
+}
+.rideConfirmFareBox{
+  margin-top:14px;background:linear-gradient(135deg,#0F1B2D,#172a46);
+  border-radius:18px;padding:14px;text-align:center;color:#fff;
+}
+.rideConfirmLabel{font-size:11px;opacity:.76;font-weight:700}
+.rideConfirmFare{font-size:30px;line-height:1.05;font-weight:950;margin-top:3px}
+.rideConfirmNote{font-size:9px;opacity:.62;margin-top:5px}
+.rideConfirmGrid{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;
+}
+.rideConfirmInfo{
+  display:flex;align-items:center;gap:8px;min-width:0;
+  border:1px solid #e7ebf0;background:#fafbfc;border-radius:13px;padding:9px;
+}
+.rideConfirmIco{font-size:17px;width:22px;text-align:center}
+.rideConfirmInfo div{min-width:0}
+.rideConfirmInfo small{
+  display:block;color:#7b8797;font-size:9px;line-height:1;
+}
+.rideConfirmInfo b{
+  display:block;color:#0F1B2D;font-size:11px;line-height:1.15;margin-top:3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.rideConfirmWomenBadge{
+  display:none;margin-top:10px;padding:8px 10px;border-radius:11px;
+  background:#f5eefb;color:#6e2d86;font-size:11px;font-weight:850;text-align:center;
+}
+.rideConfirmWomenBadge.show{display:block}
+.rideConfirmActions{
+  display:grid;grid-template-columns:.8fr 1.2fr;gap:8px;margin-top:14px;
+}
+.rideConfirmCancel,.rideConfirmOk{
+  height:46px;border:0;border-radius:13px;font-size:13px;font-weight:950;
+}
+.rideConfirmCancel{background:#eef1f5;color:#334155}
+.rideConfirmOk{background:#E10600;color:#fff;box-shadow:0 6px 16px rgba(225,6,0,.22)}
+@media (max-height:700px){
+  .rideConfirmCard{padding:14px;border-radius:20px}
+  .rideConfirmFareBox{padding:10px;margin-top:10px}
+  .rideConfirmFare{font-size:25px}
+  .rideConfirmGrid{gap:6px;margin-top:8px}
+  .rideConfirmInfo{padding:7px}
+  .rideConfirmActions{margin-top:10px}
+}
+</style>
+
 </head>
 <body>
 <div id="map"></div>
@@ -455,6 +530,48 @@ body.nightMap #map{background:#18202b}
   <div id="r51CallRow"><button id="call" class="call">Araç Çağır</button><button id="femaleCall" class="call">👩 Kadın Sürücü Çağır</button></div>
   <p id="womenStatus" style="font-size:11px;text-align:center;color:#6b7280;margin:5px 0">Uygunluk durumu kontrol ediliyor…</p>
   <button id="womenApply" type="button" style="display:none;width:100%;border:1px solid #803f9b;border-radius:12px;background:#f9f2fc;color:#803f9b;font-weight:700;padding:10px 8px;margin-top:5px">Kadın Yolcu Eşleşmesi için Başvur</button>
+</div>
+
+
+<div id="rideConfirmModal" class="rideConfirmModal">
+  <div class="rideConfirmCard" role="dialog" aria-modal="true" aria-labelledby="rideConfirmTitle">
+    <div class="rideConfirmLogo">R<span>●</span>TA</div>
+    <button id="rideConfirmClose" class="rideConfirmClose" type="button" aria-label="Kapat">×</button>
+    <div id="rideConfirmTitle" class="rideConfirmTitle">Yolculuğu Onayla</div>
+    <div class="rideConfirmSub">Bilgileri kontrol edip çağrıyı onaylayın.</div>
+
+    <div class="rideConfirmFareBox">
+      <div class="rideConfirmLabel">Tahmini Ücret</div>
+      <div id="rideConfirmFare" class="rideConfirmFare">— TL</div>
+      <div class="rideConfirmNote">Trafik ve rota değişikliklerine göre farklılık gösterebilir.</div>
+    </div>
+
+    <div class="rideConfirmGrid">
+      <div class="rideConfirmInfo">
+        <span class="rideConfirmIco">💳</span>
+        <div><small>Ödeme</small><b id="rideConfirmPayment">Nakit</b></div>
+      </div>
+      <div class="rideConfirmInfo">
+        <span class="rideConfirmIco">📍</span>
+        <div><small>Mesafe</small><b id="rideConfirmDistance">— km</b></div>
+      </div>
+      <div class="rideConfirmInfo">
+        <span class="rideConfirmIco">🚘</span>
+        <div><small>Araç</small><b id="rideConfirmVehicle">Normal</b></div>
+      </div>
+      <div class="rideConfirmInfo">
+        <span class="rideConfirmIco">🏁</span>
+        <div><small>Varış</small><b id="rideConfirmDestination">Hedef</b></div>
+      </div>
+    </div>
+
+    <div id="rideConfirmWomenBadge" class="rideConfirmWomenBadge">👩 Kadın sürücü tercihi aktif</div>
+
+    <div class="rideConfirmActions">
+      <button id="rideConfirmCancel" class="rideConfirmCancel" type="button">Vazgeç</button>
+      <button id="rideConfirmOk" class="rideConfirmOk" type="button">Sürücü Çağır</button>
+    </div>
+  </div>
 </div>
 
 <div id="chatModal" class="chatModal">
@@ -865,12 +982,45 @@ async function route(from,to,black=true){
 }
 async function calcRoute(){if(!pickup||!target||activeTrip)return;try{const j=await route(pickup,target);routeKm=+j.km;fare=Math.round(routeKm*27);$('routeText').innerHTML='<b>'+routeKm.toFixed(1)+' km</b> • Tahmini ücret <b>'+fare+' TL</b>';$('mapInfo').textContent=routeKm.toFixed(1)+' km • '+(j.durationMinutes||'--')+' dk';$('mapInfo').classList.add('show')}catch(e){$('routeText').textContent=e.message}}
 
+
+function openRideConfirm51({womenDriver=false,shownFare,method}){
+  return new Promise(resolve=>{
+    const modal=$('rideConfirmModal');
+    const ok=$('rideConfirmOk');
+    const cancel=$('rideConfirmCancel');
+    const close=$('rideConfirmClose');
+    const badge=$('rideConfirmWomenBadge');
+
+    $('rideConfirmFare').textContent=String(shownFare)+' TL';
+    $('rideConfirmPayment').textContent=method||'Nakit';
+    $('rideConfirmDistance').textContent=(Number(routeKm||0).toFixed(1))+' km';
+    $('rideConfirmVehicle').textContent=vehicle||'Normal Araç';
+    $('rideConfirmDestination').textContent=(target&&target.label)?target.label:'Hedef';
+    ok.textContent=womenDriver?'Kadın Sürücü Çağır':'Sürücü Çağır';
+    badge.classList.toggle('show',!!womenDriver);
+
+    let done=false;
+    function finish(v){
+      if(done)return;done=true;
+      modal.classList.remove('show');
+      ok.onclick=cancel.onclick=close.onclick=null;
+      modal.onclick=null;
+      resolve(v);
+    }
+    ok.onclick=()=>finish(true);
+    cancel.onclick=()=>finish(false);
+    close.onclick=()=>finish(false);
+    modal.onclick=e=>{if(e.target===modal)finish(false)};
+    modal.classList.add('show');
+  });
+}
+
 async function requestRide(womenDriver=false){const s=sess();if(!s){$('auth').classList.remove('hide');return}if(!pickup||!target||!routeKm){$('routeText').textContent='Önce alış ve varış adresini seçin.';return}
   try{
     await loadSettings();
     const shownFare=currentPromo?currentPromo.finalFare:fare;
     const method=customerSettings.payment_method==='iban'?'IBAN / Havale':'Nakit';
-    if(!confirm('Tahmini ücret: '+shownFare+' TL\nÖdeme: '+method+'\n\n'+(womenDriver?'Yalnızca kadın sürücü çağırmak istiyor musunuz?':'Aracı çağırmak istiyor musunuz?')))return;
+    if(!(await openRideConfirm51({womenDriver,shownFare,method})))return;
     $('call').disabled=true;$('call').textContent='Sürücü aranıyor...';
     const j=await post(CORE+'?action=match',{pickup,target,destination:target.label||'Hedef',vehicle,distanceKm:routeKm,fare,customerAccountId:s.accountId,customerSessionToken:s.sessionToken,paymentMethod:customerSettings.payment_method||'cash',promoCode:currentPromo?.code||'',corporateId:customerSettings.corporate_id||'',womenDriver});
     activeTrip=j.tripId;
