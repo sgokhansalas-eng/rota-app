@@ -177,6 +177,138 @@ body.nightMap #map{background:#18202b}
 }
 </style>
 
+
+<style id="rota-compact53-style">
+/* Force compact home layout. */
+.sheet{
+  overflow:hidden!important;
+}
+.sheet:not(.tripActive){
+  max-height:none!important;
+  height:auto!important;
+  padding:2px 7px calc(4px + env(safe-area-inset-bottom))!important;
+  border-radius:16px 16px 0 0!important;
+}
+.sheet:not(.tripActive) .grab{display:none!important}
+.sheet:not(.tripActive) .brand{
+  font-size:12px!important;
+  line-height:12px!important;
+  margin:0!important;
+}
+.sheet:not(.tripActive) .routeText{
+  font-size:8px!important;
+  line-height:9px!important;
+  min-height:9px!important;
+  margin:1px 0!important;
+}
+.sheet:not(.tripActive) #r51Saved{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  margin:2px 0!important;
+  border-radius:9px!important;
+}
+.sheet:not(.tripActive) .r51SavedHead{
+  grid-column:1/-1!important;
+  min-height:22px!important;
+  padding:3px 6px!important;
+  font-size:10px!important;
+  line-height:1!important;
+}
+.sheet:not(.tripActive) #r51AllSaved{
+  font-size:9px!important;
+  line-height:1!important;
+  padding:0!important;
+}
+.sheet:not(.tripActive) .r51SavedRow{
+  min-height:30px!important;
+  height:30px!important;
+  padding:3px 5px!important;
+  gap:4px!important;
+  border-bottom:0!important;
+}
+.sheet:not(.tripActive) #r51Home{border-right:1px solid #edf1f5!important}
+.sheet:not(.tripActive) .r51SavedIcon{
+  width:14px!important;
+  font-size:10px!important;
+}
+.sheet:not(.tripActive) .r51SavedTxt b{
+  font-size:9px!important;
+  line-height:9px!important;
+}
+.sheet:not(.tripActive) .r51SavedTxt small{
+  font-size:7px!important;
+  line-height:7px!important;
+  margin-top:1px!important;
+}
+.sheet:not(.tripActive) .r51SavedRow>span:last-child{
+  font-size:10px!important;
+}
+.sheet:not(.tripActive) .vehicles{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:2px!important;
+  margin:2px 0!important;
+}
+.sheet:not(.tripActive) .veh{
+  min-height:34px!important;
+  height:34px!important;
+  padding:2px 3px!important;
+  border-radius:8px!important;
+  font-size:8px!important;
+  line-height:8px!important;
+}
+.sheet:not(.tripActive) .veh strong{
+  font-size:8px!important;
+  line-height:8px!important;
+  margin:0!important;
+}
+.sheet:not(.tripActive) .veh small{
+  font-size:6px!important;
+  line-height:6px!important;
+  margin-top:1px!important;
+}
+.sheet:not(.tripActive) #r51CallRow{
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  gap:4px!important;
+  margin:2px 0!important;
+}
+.sheet:not(.tripActive) #r51CallRow .call{
+  height:34px!important;
+  min-height:34px!important;
+  padding:2px 4px!important;
+  margin:0!important;
+  border-radius:9px!important;
+  font-size:9px!important;
+  line-height:1!important;
+}
+.sheet:not(.tripActive) #womenStatus{
+  font-size:7px!important;
+  line-height:8px!important;
+  height:8px!important;
+  min-height:8px!important;
+  max-height:8px!important;
+  margin:1px 0!important;
+  overflow:hidden!important;
+}
+.sheet:not(.tripActive) #womenApply{
+  height:28px!important;
+  min-height:28px!important;
+  padding:3px 5px!important;
+  margin:1px 0!important;
+  border-radius:8px!important;
+  font-size:8px!important;
+}
+/* During an active/searching trip, keep home-only blocks out of the way. */
+.sheet.tripActive #r51Saved,
+.sheet.tripActive .vehicles,
+.sheet.tripActive #r51CallRow,
+.sheet.tripActive #womenStatus,
+.sheet.tripActive #womenApply{
+  display:none!important;
+}
+</style>
+
 </head>
 <body>
 <div id="map"></div>
