@@ -38,7 +38,7 @@
   let source = null, button = null;
   const isCode = input => input instanceof HTMLInputElement &&
     !modal.contains(input) && (
-      /4\\s*haneli\\s*kod|yolcu\\s*kodu/i.test(input.placeholder || '') ||
+      /4\s*haneli\s*kod|yolcu\s*kodu/i.test(input.placeholder || '') ||
       (/code|pickup/i.test(input.id || '') && String(input.maxLength) === '4')
     );
 
@@ -70,7 +70,7 @@
     const verify = findVerify(input);
     if (!verify) return; // Never interfere with other code or login fields.
     source = input;button = verify;
-    code.value = String(source.value || '').replace(/\\D/g,'').slice(0,4);
+    code.value = String(source.value || '').replace(/\D/g,'').slice(0,4);
     modal.classList.add('open');
     position();
     setTimeout(() => {code.focus({preventScroll:true});position();}, 60);
@@ -79,7 +79,7 @@
   }
   function submit() {
     if (!source || !button) return hide(false);
-    const value = code.value.replace(/\\D/g,'').slice(0,4);
+    const value = code.value.replace(/\D/g,'').slice(0,4);
     if (value.length !== 4) {code.setCustomValidity('4 haneli kod girin');code.reportValidity();return}
     code.setCustomValidity('');
     const input = source, verify = button;
@@ -94,7 +94,7 @@
     if (isCode(e.target)) open(e.target);
   }, true);
   code.addEventListener('input', () => {
-    code.value = code.value.replace(/\\D/g,'').slice(0,4);
+    code.value = code.value.replace(/\D/g,'').slice(0,4);
     code.setCustomValidity('');
   });
   code.addEventListener('keydown', e => {if(e.key==='Enter'){e.preventDefault();submit()}});
