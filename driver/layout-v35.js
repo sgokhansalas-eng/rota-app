@@ -19,15 +19,4 @@ style.textContent=[
 "@media(max-width:420px){#rotaFinal17 .rfd-card{padding:9px 11px!important}#rotaFinal17 .leaflet-container{height:210px!important;max-height:210px!important}}"
 ].join("\n");
 document.head.appendChild(style);
-let lastHuman=Date.now(), lastScroll=window.scrollY;
-window.addEventListener("touchstart",()=>{lastHuman=Date.now();lastScroll=window.scrollY},{passive:true});
-window.addEventListener("wheel",()=>{lastHuman=Date.now();lastScroll=window.scrollY},{passive:true});
-window.addEventListener("keydown",()=>{lastHuman=Date.now();lastScroll=window.scrollY},{passive:true});
-window.addEventListener("scroll",()=>{
-  const y=window.scrollY;
-  if(Date.now()-lastHuman<1200 || Math.abs(y-lastScroll)<90){lastScroll=y;return;}
-  // If the dashboard moves the document without a user gesture, restore prior reading position.
-  const saved=lastScroll;
-  requestAnimationFrame(()=>{if(Date.now()-lastHuman>1200&&Math.abs(window.scrollY-saved)>85)window.scrollTo({top:saved,behavior:"instant"})});
-},{passive:true});
 })();
