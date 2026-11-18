@@ -1,0 +1,10 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>ROTA Sürücü v30</title><style>body{font-family:system-ui,Arial;background:#f1f5fa;color:#12213a;min-height:100vh;display:grid;place-items:center;margin:0;padding:22px;box-sizing:border-box}.status{background:#fff;padding:28px;border-radius:19px;box-shadow:0 15px 38px #122d4b18;max-width:410px;text-align:center}.status h1{font-size:25px}a{color:#105bbd}</style></head><body><div class="status"><h1>ROTA Sürücü</h1><p id="status">Sürücü ekranı açılıyor…</p><a href="https://rota-surucu-final29.onrender.com/">Mevcut sürüme dön</a></div><script>
+(async()=>{
+try{
+const r=await fetch('https://ftltemgtzkjfnkxsxxmd.supabase.co/functions/v1/rota-driver-page-v30',{cache:'no-store'});
+const j=await r.json();if(!r.ok||typeof j.html!=='string')throw Error(j.error||'Kaynak alınamadı');
+if(!j.html.includes('rotaFinal17'))throw Error('Beklenen sürücü paneli doğrulanamadı');
+document.open();document.write(j.html);document.close();
+}catch(e){document.getElementById('status').textContent='Yeni ekran şu anda yüklenemiyor: '+e.message+'. Mevcut sürücü uygulaması kullanılabilir.';}
+})();
+</script></body></html>
