@@ -3,8 +3,11 @@
 "use strict";
 if(window.__rotaDriverLogin38)return;
 window.__rotaDriverLogin38=true;
+// Hide only the legacy auth panel while the approved design is being attached.
+document.documentElement.classList.add("rota-login38-pending");
 const css=document.createElement("style");css.id="rotaLogin38CSS";
 css.textContent=[
+"html.rota-login38-pending #rotaDriverAuth:not(.rota-login38){visibility:hidden!important}",
 "#rotaDriverAuth.rota-login38{background:radial-gradient(ellipse at 75% 8%,#254778 0,transparent 45%),linear-gradient(150deg,#061329 5%,#102b55 67%,#07172e 100%)!important;color:white!important;overflow-y:auto!important;overscroll-behavior:contain;align-items:center!important;justify-content:center!important;padding:24px 14px calc(24px + env(safe-area-inset-bottom))!important;box-sizing:border-box!important}",
 "#rotaDriverAuth.rota-login38:before{content:'ROTA';display:block!important;color:white!important;font:900 clamp(36px,8vw,56px) system-ui,Arial!important;letter-spacing:-3px;text-align:center;text-shadow:0 4px 16px #0004;margin:0 auto 6px;line-height:1.1}",
 "#rotaDriverAuth.rota-login38 .rota-login-card38{background:linear-gradient(160deg,#152b4e 5%,#08172c 100%)!important;color:white!important;border:1px solid #f8c95e66!important;border-radius:24px!important;box-shadow:0 16px 45px #010e2399!important;padding:25px 22px!important;width:min(100%,440px)!important;max-width:440px!important;box-sizing:border-box!important;margin:8px auto!important}",
@@ -37,6 +40,7 @@ if(phone&&btn){form=el;break}
 if(!form)return;
 done.add(pass);
 auth.classList.add("rota-login38");
+document.documentElement.classList.remove("rota-login38-pending");
 form.classList.add("rota-login-card38");
 btn.classList.add("rota-login-submit38");
 phone.setAttribute("autocomplete","tel");pass.setAttribute("autocomplete","current-password");
@@ -57,5 +61,9 @@ const note=document.createElement("p");note.className="rota-login-note38";note.t
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",scan,{once:true});else scan();
 window.addEventListener("load",scan);
-setTimeout(scan,700);setTimeout(scan,1800);
+const observer=new MutationObserver(()=>scan());
+observer.observe(document.documentElement,{subtree:true,childList:true});
+setTimeout(scan,50);setTimeout(scan,300);setTimeout(scan,700);setTimeout(scan,1800);
+// Safety fallback: never leave login hidden if the markup changes.
+setTimeout(()=>{document.documentElement.classList.remove("rota-login38-pending");observer.disconnect()},4000);
 })();
