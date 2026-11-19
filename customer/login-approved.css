@@ -115,3 +115,17 @@
  #auth.rotaCustomerApproved .tabs button{font-size:15px!important}
  #auth.rotaCustomerApproved .rotaCustomerBenefits{font-size:10px!important}
 }
+
+/* The panel is white, while branding and benefits stay on the navy background. */
+#auth.rotaCustomerApproved .authCard:before{display:none!important}
+#auth.rotaCustomerApproved .rotaCustomerPanel{
+ background:#fff!important;color:#0b2446!important;
+ border-radius:24px!important;padding:14px 17px 19px!important;
+ box-shadow:0 14px 35px rgba(0,0,0,.25)!important;
+ text-align:left!important;
+}
+#auth.rotaCustomerApproved .rotaCustomerPanel .tabs{
+ border-radius:17px!important;
+}
+#auth.rotaCustomerApproved .rotaCustomerPanel .authBtn{margin-top:13px!important}
+#auth.rotaCustomerApproved .rotaCustomerBenefits{padding:0 4px!important}
