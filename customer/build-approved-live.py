@@ -89,7 +89,7 @@ html = re.sub(r"</body\s*>", lambda match:"<script>\n"+dashboard_script+"\n</scr
 controls_script = Path("customer/ui-controls-fix.js").read_text(encoding="utf-8")
 if not controls_script.strip().endswith("})();"):
     raise SystemExit("Customer UI controls script is truncated.")
-html = re.sub(r"</body\\s*>", lambda match: "<script id='rota-ui-controls-fix'>\n" + controls_script + "\n</script>\n" + match.group(), html, count=1, flags=re.I)
+html = re.sub(r"</body\s*>", lambda match: "<script id='rota-ui-controls-fix'>" + controls_script + "</script>" + match.group(), html, count=1, flags=re.I)
 # Preserve the local JavaScript / CSS dependencies used by final50.
 # Missing /leaflet.js prevents the map and connected event handlers from initializing.
 from urllib.parse import urljoin
