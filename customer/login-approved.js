@@ -1,59 +1,41 @@
-/* ROTA Customer approved visual login. Existing handlers are not replaced. */
+/* Approved customer login skin for FINAL50. Pure visual DOM enhancements, original event handlers intact. */
 (function(){
 "use strict";
-if(window.__rotaCustomerVisualLogin)return;
-window.__rotaCustomerVisualLogin=true;
-function init(){
-const auth=document.getElementById("auth");
-if(!auth || auth.dataset.rotaStyled==="yes")return;
-const card=auth.querySelector(".authCard");
-const brand=card&&card.querySelector(".authBrand");
-const tabs=card&&card.querySelector(".tabs");
-const phone=document.getElementById("phone");
-const password=document.getElementById("password");
-const submit=document.getElementById("authBtn");
-const forgot=document.getElementById("forgotBtn");
-if(!card||!brand||!tabs||!phone||!password||!submit||!forgot)return;
-auth.dataset.rotaStyled="yes";
-auth.classList.add("rotaCustomerApproved");
-brand.textContent="🚘 ROTA";
-const subtitle=document.createElement("div");
-subtitle.className="rotaCustomerTag";
-subtitle.textContent="MÜŞTERİ";
-brand.after(subtitle);
-const slogan=document.createElement("div");
-slogan.className="rotaCustomerSlogan";
-slogan.textContent="Şehrin Her Yerinde, Güvenli Yolculuk";
-subtitle.after(slogan);
-const login=document.getElementById("loginTab"),reg=document.getElementById("registerTab");
-if(login)login.textContent="Giriş Yap";
-if(reg)reg.textContent="Üye Ol";
-phone.placeholder="Telefon numaranız";
-phone.setAttribute("autocomplete","tel");
-phone.setAttribute("inputmode","tel");
-password.placeholder="Şifreniz";
-password.setAttribute("autocomplete","current-password");
-const wrap=document.createElement("div");
-wrap.className="rotaCustomerPassword";
-password.before(wrap);wrap.appendChild(password);
-const toggle=document.createElement("button");
-toggle.type="button";toggle.className="rotaCustomerShow";
-toggle.textContent="Göster";
-toggle.onclick=function(){let on=password.type==="password";password.type=on?"text":"password";toggle.textContent=on?"Gizle":"Göster"};
-wrap.appendChild(toggle);
-const helper=document.createElement("div");
-helper.className="rotaCustomerHelper";
-forgot.before(helper);helper.appendChild(forgot);
-const panel=document.createElement("div");
-panel.className="rotaCustomerPanel";
-const moving=[];
-for(let n=slogan.nextElementSibling;n;n=n.nextElementSibling)moving.push(n);
-for(const node of moving)panel.appendChild(node);
-card.appendChild(panel);
-const benefits=document.createElement("div");
-benefits.className="rotaCustomerBenefits";
-benefits.innerHTML="<span>♢ Güvenli Yolculuk</span><span>⚡ Hızlı Çağrı</span><span>⌖ Kolay Kullanım</span>";
-card.appendChild(benefits);
+if(window.__rotaCustomerThemeFinal50)return;
+window.__rotaCustomerThemeFinal50=true;
+function apply(){
+  var overlay=document.getElementById("authOverlay");
+  if(!overlay || overlay.dataset.rotaTheme==="ready")return;
+  var auth=overlay.querySelector(".auth"),card=auth&&auth.querySelector(".authCard");
+  var brand=auth&&auth.querySelector(".authBrand");
+  var phone=document.getElementById("phone"),pass=document.getElementById("password");
+  var login=document.getElementById("tabLogin"),reg=document.getElementById("tabReg");
+  var action=document.getElementById("authBtn");
+  if(!auth||!card||!brand||!phone||!pass||!login||!reg||!action)return;
+  overlay.dataset.rotaTheme="ready";
+  overlay.classList.add("rotaCustomerTheme50");
+  brand.textContent="🚘 ROTA";
+  var pill=document.createElement("div");pill.className="rotaCustomerPill";pill.textContent="MÜŞTERİ";
+  brand.after(pill);
+  var slogan=document.createElement("div");slogan.className="rotaCustomerSlogan";
+  slogan.textContent="Şehrin Her Yerinde, Güvenli Yolculuk";pill.after(slogan);
+  login.textContent="Giriş Yap";reg.textContent="Üye Ol";
+  phone.placeholder="Telefon numaranız";phone.autocomplete="tel";
+  pass.placeholder="Şifreniz";pass.autocomplete="current-password";
+  if(!pass.parentElement.classList.contains("rotaCustomerPassword")){
+    var wrap=document.createElement("div");wrap.className="rotaCustomerPassword";
+    pass.before(wrap);wrap.appendChild(pass);
+    var toggle=document.createElement("button");toggle.type="button";
+    toggle.className="rotaCustomerShow";toggle.textContent="Göster";
+    toggle.addEventListener("click",function(){
+      var hidden=pass.type==="password";pass.type=hidden?"text":"password";
+      toggle.textContent=hidden?"Gizle":"Göster";
+    });
+    wrap.appendChild(toggle);
+  }
+  var benefits=document.createElement("div");benefits.className="rotaCustomerBenefits";
+  benefits.innerHTML="<span>◇ Güvenli Yolculuk</span><span>⚡ Hızlı Çağrı</span><span>⌖ Kolay Kullanım</span>";
+  auth.appendChild(benefits);
 }
-if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});else init();
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",apply,{once:true});else apply();
 })();
