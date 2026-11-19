@@ -83,5 +83,26 @@ fallback = """
 </script>
 """
 html = re.sub(r"</body\s*>", lambda match:fallback + "\n" + match.group(), html, count=1, flags=re.I)
+# Preserve the local JavaScript / CSS dependencies used by final50.
+# Missing /leaflet.js prevents the map and connected event handlers from initializing.
+from urllib.parse import urljoin
+local_assets=set()
+for match in re.finditer(r"""<(?:script|link)\\b[^>]*?\\b(?:src|href)\\s*=\\s*["'](/[^"']+)["']""", html, flags=re.I):
+    local_assets.add(match.group(1).split("?")[0])
+for asset in sorted(local_assets):
+    if asset.startswith("//") or ".." in asset or not asset.startswith("/"):
+        raise SystemExit("Unsafe local asset path: "+asset)
+    filename=out / asset.lstrip("/")
+    filename.parent.mkdir(parents=True,exist_ok=True)
+    asset_req=Request(urljoin(source,asset),headers={"User-Agent":"Mozilla/5.0 ROTA-Customer-Theme-Build"})
+    with urlopen(asset_req,timeout=65) as response:
+        data=response.read()
+        content_type=response.headers.get("Content-Type","")
+    if len(data)<100 or "text/html" in content_type.lower():
+        raise SystemExit("Asset is missing or invalid: "+asset)
+    filename.write_bytes(data)
+    print("RESTORED_LOCAL_ASSET",asset,len(data),"bytes",flush=True)
+if "/leaflet.js" not in local_assets:
+    raise SystemExit("Expected local leaflet.js dependency not found; refusing release.")
 (out / "index.html").write_text(html, encoding="utf-8")
 print("ROTA customer themed release built, original final50 logic retained.",flush=True)
