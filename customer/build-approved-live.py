@@ -86,9 +86,11 @@ html = re.sub(r"</body\s*>", lambda match:fallback + "\n" + match.group(), html,
 # Preserve the local JavaScript / CSS dependencies used by final50.
 # Missing /leaflet.js prevents the map and connected event handlers from initializing.
 from urllib.parse import urljoin
-local_assets=set()
-for match in re.finditer(r"""<(?:script|link)\\b[^>]*?\\b(?:src|href)\\s*=\\s*["'](/[^"']+)["']""", html, flags=re.I):
-    local_assets.add(match.group(1).split("?")[0])
+local_assets={"/leaflet.js"}
+for asset_path in re.findall(r'<script[^>]+src="/([^"]+)"', html, flags=re.I):
+    local_assets.add("/"+asset_path.split("?")[0])
+for asset_path in re.findall(r'<link[^>]+href="/([^"]+)"', html, flags=re.I):
+    local_assets.add("/"+asset_path.split("?")[0])
 for asset in sorted(local_assets):
     if asset.startswith("//") or ".." in asset or not asset.startswith("/"):
         raise SystemExit("Unsafe local asset path: "+asset)
