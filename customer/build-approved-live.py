@@ -67,6 +67,7 @@ for term in ["function openDrawer","function init33","r33Reserve').onclick","r33
         print("R33_CODE",repr(html[max(0,at-700):at+1300])[:2100],flush=True)
 style = Path("customer/login-approved.css").read_text(encoding="utf-8")
 script = Path("customer/login-approved.js").read_text(encoding="utf-8")
+dashboard_script = Path("customer/dashboard-repair.js").read_text(encoding="utf-8")
 preload = '<style id="rotaCustomerHideBeforeReady">#authOverlay:not(.rotaCustomerTheme50){visibility:hidden!important}</style>'
 html = re.sub(r"</head\s*>",lambda match: preload + "\n<style>" + style + "</style>\n" + match.group(),html,count=1,flags=re.I)
 fallback = """
@@ -83,6 +84,7 @@ fallback = """
 </script>
 """
 html = re.sub(r"</body\s*>", lambda match:fallback + "\n" + match.group(), html, count=1, flags=re.I)
+html = re.sub(r"</body\\s*>", lambda match:"<script>\\n"+dashboard_script+"\\n</script>\\n"+match.group(), html, count=1, flags=re.I)
 # Preserve the local JavaScript / CSS dependencies used by final50.
 # Missing /leaflet.js prevents the map and connected event handlers from initializing.
 from urllib.parse import urljoin
