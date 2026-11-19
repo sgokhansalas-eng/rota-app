@@ -1,0 +1,53 @@
+/* ROTA Customer approved visual login. Existing handlers are not replaced. */
+(function(){
+"use strict";
+if(window.__rotaCustomerVisualLogin)return;
+window.__rotaCustomerVisualLogin=true;
+function init(){
+const auth=document.getElementById("auth");
+if(!auth || auth.dataset.rotaStyled==="yes")return;
+const card=auth.querySelector(".authCard");
+const brand=card&&card.querySelector(".authBrand");
+const tabs=card&&card.querySelector(".tabs");
+const phone=document.getElementById("phone");
+const password=document.getElementById("password");
+const submit=document.getElementById("authBtn");
+const forgot=document.getElementById("forgotBtn");
+if(!card||!brand||!tabs||!phone||!password||!submit||!forgot)return;
+auth.dataset.rotaStyled="yes";
+auth.classList.add("rotaCustomerApproved");
+brand.textContent="🚘 ROTA";
+const subtitle=document.createElement("div");
+subtitle.className="rotaCustomerTag";
+subtitle.textContent="MÜŞTERİ";
+brand.after(subtitle);
+const slogan=document.createElement("div");
+slogan.className="rotaCustomerSlogan";
+slogan.textContent="Şehrin Her Yerinde, Güvenli Yolculuk";
+subtitle.after(slogan);
+const login=document.getElementById("loginTab"),reg=document.getElementById("registerTab");
+if(login)login.textContent="Giriş Yap";
+if(reg)reg.textContent="Üye Ol";
+phone.placeholder="Telefon numaranız";
+phone.setAttribute("autocomplete","tel");
+phone.setAttribute("inputmode","tel");
+password.placeholder="Şifreniz";
+password.setAttribute("autocomplete","current-password");
+const wrap=document.createElement("div");
+wrap.className="rotaCustomerPassword";
+password.before(wrap);wrap.appendChild(password);
+const toggle=document.createElement("button");
+toggle.type="button";toggle.className="rotaCustomerShow";
+toggle.textContent="Göster";
+toggle.onclick=function(){let on=password.type==="password";password.type=on?"text":"password";toggle.textContent=on?"Gizle":"Göster"};
+wrap.appendChild(toggle);
+const helper=document.createElement("div");
+helper.className="rotaCustomerHelper";
+forgot.before(helper);helper.appendChild(forgot);
+const benefits=document.createElement("div");
+benefits.className="rotaCustomerBenefits";
+benefits.innerHTML="<span>♢ Güvenli Yolculuk</span><span>⚡ Hızlı Çağrı</span><span>⌖ Kolay Kullanım</span>";
+card.appendChild(benefits);
+}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init,{once:true});else init();
+})();
