@@ -20,6 +20,43 @@ function apply(){
   var slogan=document.createElement("div");slogan.className="rotaCustomerSlogan";
   slogan.textContent="Şehrin Her Yerinde, Güvenli Yolculuk";pill.after(slogan);
   login.textContent="Giriş Yap";reg.textContent="Üye Ol";
+  // Keep the original registration API and submit handler. Guarantee visible fields on tab clicks.
+  function ensureRegisterFields(){
+    var fields=document.getElementById("rotaRegExtra");
+    if(!fields){
+      fields=document.createElement("div");
+      fields.id="rotaRegExtra";
+      fields.className="rotaRegExtra";
+      fields.innerHTML='<input id="rotaFirstName" class="inp" autocomplete="given-name" placeholder="Ad" required>'+
+        '<input id="rotaLastName" class="inp" autocomplete="family-name" placeholder="Soyad" required>'+
+        '<input id="rotaTcNo" class="inp" inputmode="numeric" maxlength="11" autocomplete="off" placeholder="T.C. kimlik numarası" required>';
+      action.before(fields);
+    }
+    return fields;
+  }
+  function syncRegistration(isRegister){
+    login.classList.toggle("on",!isRegister);
+    login.classList.toggle("off",isRegister);
+    reg.classList.toggle("on",isRegister);
+    reg.classList.toggle("off",!isRegister);
+    action.textContent=isRegister?"Kayıt Ol":"Giriş Yap";
+    var fields=ensureRegisterFields();
+    fields.classList.toggle("show",isRegister);
+    fields.style.setProperty("display",isRegister?"block":"none","important");
+    fields.setAttribute("aria-hidden",isRegister?"false":"true");
+  }
+  // Do not stop propagation: original handlers still set the internal login/register mode.
+  // Run after those handlers too, because older scripts may reset the field visibility.
+  reg.addEventListener("click",function(){
+    syncRegistration(true);
+    setTimeout(function(){syncRegistration(true)},0);
+  });
+  login.addEventListener("click",function(){
+    syncRegistration(false);
+    setTimeout(function(){syncRegistration(false)},0);
+  });
+  syncRegistration(reg.classList.contains("on"));
+
   phone.placeholder="Telefon numaranız";phone.autocomplete="tel";
   pass.placeholder="Şifreniz";pass.autocomplete="current-password";
   if(!pass.parentElement.classList.contains("rotaCustomerPassword")){
