@@ -1,24 +1,41 @@
 #!/usr/bin/env python3
-"""Create an isolated ROTA Customer visual release from the existing working customer dashboard."""
+"""Create approved customer login release based on the unchanged production final50 page."""
 from pathlib import Path
 from urllib.request import urlopen, Request
+from urllib.error import HTTPError, URLError
+import time
+import re
+import sys
 
 source = "https://rota-musteri-final50.onrender.com/"
 out = Path("customer-approved-public")
 out.mkdir(exist_ok=True)
-request = Request(source, headers={"User-Agent":"ROTA-Customer-Login-Release/1.0","Cache-Control":"no-cache"})
-with urlopen(request, timeout=110) as response:
-    html = response.read().decode("utf-8")
-markers = ["id=\"auth\"", "id=\"phone\"", "id=\"password\"", "id=\"authBtn\"", "id=\"loginTab\"", "id=\"registerTab\""]
-if not all(marker in html for marker in markers):
-    raise SystemExit("Required existing auth controls missing; refusing to publish.")
-if "</head>" not in html or "</body>" not in html:
-    raise SystemExit("Unexpected source HTML; refusing to publish.")
+html = None
+for attempt in range(1, 7):
+    try:
+        req = Request(source, headers={"User-Agent": "Mozilla/5.0 ROTA-Customer-Theme-Build", "Cache-Control": "no-cache"})
+        with urlopen(req, timeout=60) as response:
+            html = response.read().decode("utf-8")
+        print("Downloaded final50 source: %s bytes (attempt %s)" % (len(html), attempt), flush=True)
+        break
+    except Exception as exc:
+        print("final50 download attempt %s failed: %r" % (attempt, exc), flush=True)
+        if attempt < 6:
+            time.sleep(3 * attempt)
+if not html:
+    raise SystemExit("Cannot safely publish: production final50 HTML could not be downloaded.")
+if not re.search(r"<html\b", html, re.I) or not re.search(r"</body\s*>", html, re.I):
+    raise SystemExit("Cannot safely publish: final50 response was not a complete HTML page.")
+# Keep every existing JS/auth feature intact. Adapt to markup without hardcoded attribute ordering.
+auth_matches = re.findall(r'id\s*=\s*["\']([^"\']+)["\']', html, flags=re.I)
+print("Auth ID availability: %s" % {name:(name in auth_matches) for name in ["auth","phone","password","authBtn","loginTab","registerTab"]},flush=True)
+required = ["auth", "phone", "password", "authBtn", "loginTab", "registerTab"]
+if not all(x in auth_matches for x in required):
+    raise SystemExit("Cannot safely publish: expected final50 login controls were not found.")
 style = Path("customer/login-approved.css").read_text(encoding="utf-8")
 script = Path("customer/login-approved.js").read_text(encoding="utf-8")
-# Prevent the original UI appearing momentarily before the styling is initialized.
 preload = '<style id="rotaCustomerHideBeforeReady">#auth:not(.rotaCustomerApproved){visibility:hidden!important}</style>'
-html = html.replace("</head>", preload + "\n<style>" + style + "</style>\n</head>", 1)
+html = re.sub(r"</head\s*>",lambda match: preload + "\n<style>" + style + "</style>\n" + match.group(),html,count=1,flags=re.I)
 fallback = """
 <script>
 (function(){
@@ -32,6 +49,6 @@ fallback = """
 })();
 </script>
 """
-html = html.replace("</body>", fallback + "\n</body>", 1)
+html = re.sub(r"</body\s*>", lambda match:fallback + "\n" + match.group(), html, count=1, flags=re.I)
 (out / "index.html").write_text(html, encoding="utf-8")
-print("Customer visual login release ready; original auth and dashboard copied unchanged")
+print("ROTA customer themed release built, original final50 logic retained.",flush=True)
