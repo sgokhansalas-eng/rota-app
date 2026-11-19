@@ -31,6 +31,15 @@ auth_matches = re.findall(r'id\s*=\s*["\']([^"\']+)["\']', html, flags=re.I)
 print("Auth ID availability: %s" % {name:(name in auth_matches) for name in ["auth","phone","password","authBtn","loginTab","registerTab"]},flush=True)
 required = ["auth", "phone", "password", "authBtn", "loginTab", "registerTab"]
 if not all(x in auth_matches for x in required):
+    print("LOGIN_DIAGNOSTICS_BEGIN", flush=True)
+    for pat in [r'id\\s*=\\s*["\\\'](?:phone|password|authBtn|loginTab|registerTab|rotaDriverAuth)["\\\']',r'login|register|auth|giriş',r'<form\\b']:
+        ms=list(re.finditer(pat,html,flags=re.I))
+        print("PATTERN",pat,"MATCHES",len(ms),flush=True)
+        for m in ms[:6]:
+            nearby=html[max(0,m.start()-260):min(len(html),m.end()+340)]
+            nearby=re.sub(r'(?i)(apikey|token|secret|authorization|password\\s*[:=])[^\\s,;<>]+',r'\\1=[REDACTED]',nearby)
+            print(repr(nearby[:630]),flush=True)
+    print("LOGIN_DIAGNOSTICS_END",flush=True)
     raise SystemExit("Cannot safely publish: expected final50 login controls were not found.")
 style = Path("customer/login-approved.css").read_text(encoding="utf-8")
 script = Path("customer/login-approved.js").read_text(encoding="utf-8")
