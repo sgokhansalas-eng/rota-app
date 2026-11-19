@@ -137,12 +137,13 @@ async function notifications(){
  }catch(e){error(body,e)}
 }
 function routeMenu(label){
- if(label.includes("Yolculuklar"))return trips("trips");
- if(label.includes("Rezervasyonlar"))return trips("reservations");
- if(label.includes("İndirim"))return promos();
- if(label.includes("Bildirim"))return notifications();
- if(label.includes("Tercih"))return settings();
- if(label.includes("Sürücü Olmak")){window.location.href="https://rota-surucu-giris-guncel.onrender.com";return}
+ if(label.includes("Yolculuklar")){trips("trips");return true}
+ if(label.includes("Rezervasyonlar")){trips("reservations");return true}
+ if(label.includes("İndirim")){promos();return true}
+ if(label.includes("Bildirim")){notifications();return true}
+ if(label.includes("Tercih")){settings();return true}
+ if(label.includes("Sürücü Olmak")){window.location.href="https://rota-surucu-giris-guncel.onrender.com";return true}
+ return false;
 }
 function bind(){
  const reserve=$("r33Reserve"),reserveModal=$("rotaReservationModal");
@@ -160,8 +161,12 @@ function bind(){
   drawer.querySelectorAll(".r33-ditem").forEach(item=>{
    if(item.id==="r33Night")return;
    item.addEventListener("click",e=>{
+    const label=item.textContent||"";
+    // Only replace a click when this repair actually handles it.
+    // Unrecognized items must retain the existing production handlers.
+    if(!/Yolculuklar|Rezervasyonlar|İndirim|Bildirim|Tercih|Sürücü Olmak/.test(label))return;
     e.preventDefault();e.stopImmediatePropagation();
-    routeMenu(item.textContent||"");
+    routeMenu(label);
    },true);
   });
  }
