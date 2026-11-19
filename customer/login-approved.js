@@ -32,6 +32,16 @@ function apply(){
         '<input id="rotaTcNo" class="inp" inputmode="numeric" maxlength="11" autocomplete="off" placeholder="T.C. kimlik numarası" required>';
       action.before(fields);
     }
+    if(!document.getElementById("rotaEmail")){
+      var email=document.createElement("input");
+      email.id="rotaEmail";
+      email.type="email";
+      email.className="inp";
+      email.autocomplete="email";
+      email.required=true;
+      email.placeholder="E-posta adresiniz (zorunlu)";
+      fields.appendChild(email);
+    }
     return fields;
   }
   function syncRegistration(isRegister){
