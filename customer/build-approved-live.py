@@ -84,7 +84,7 @@ fallback = """
 </script>
 """
 html = re.sub(r"</body\s*>", lambda match:fallback + "\n" + match.group(), html, count=1, flags=re.I)
-html = re.sub(r"</body\\s*>", lambda match:"<script>\\n"+dashboard_script+"\\n</script>\\n"+match.group(), html, count=1, flags=re.I)
+html = re.sub(r"</body\s*>", lambda match:"<script>\n"+dashboard_script+"\n</script>\n"+match.group(), html, count=1, flags=re.I)
 # Preserve the local JavaScript / CSS dependencies used by final50.
 # Missing /leaflet.js prevents the map and connected event handlers from initializing.
 from urllib.parse import urljoin
