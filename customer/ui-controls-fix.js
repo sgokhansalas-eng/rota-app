@@ -309,7 +309,11 @@ async function chat(){
 }
 function onClick(e){
  const node=e.target instanceof Element?e.target:null;if(!node)return;
- const btn=node.closest("button");if(!btn)return;
+ const btn=node.closest("button");
+ if(node.closest("#rotaDesign33 .r33-card .r33-row,#rotaDesign33 .r33-card .r33-title")){
+  e.preventDefault();e.stopImmediatePropagation();favorites();return;
+ }
+ if(!btn)return;
  const match=selector=>btn.matches(selector)||!!btn.closest(selector);
  if(match("#r33Reserve")){
   e.preventDefault();e.stopImmediatePropagation();
