@@ -32,6 +32,9 @@ print("Auth ID availability: %s" % {name:(name in auth_matches) for name in ["au
 required = ["auth", "phone", "password", "authBtn", "loginTab", "registerTab"]
 if not all(x in auth_matches for x in required):
     print("LOGIN_DIAGNOSTICS_BEGIN", flush=True)
+    for needle in ['id="phone"','id="password"','id="authBtn"','class="overlay"','class="auth"','class="tabs"']:
+        i=html.find(needle)
+        print("NODE", needle, "INDEX",i,"CONTEXT", repr(html[max(0,i-350):i+950]) if i>=0 else "",flush=True)
     for pat in [r'id\\s*=\\s*["\\\'](?:phone|password|authBtn|loginTab|registerTab|rotaDriverAuth)["\\\']',r'login|register|auth|giriş',r'<form\\b']:
         ms=list(re.finditer(pat,html,flags=re.I))
         print("PATTERN",pat,"MATCHES",len(ms),flush=True)
