@@ -50,6 +50,15 @@ html = html.replace(target,
     "if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(payload.email)){"
     "if(msg)msg.textContent='Geçerli e-posta adresinizi girin.';return;}}",
     1)
+# Inspect current deployed customer layout and click bindings, do not expose credentials.
+for term in ["rotaGoogleVisual","#map,.map","Rezervasyon Yap","Araç Çağır","Kadın Sürücü Çağır","Nereye gidiyoruz","Kayıtlı Konumlarım","rotaSectionModal"]:
+    hits=[m.start() for m in re.finditer(re.escape(term),html,re.I)]
+    print("DEBUG_UI",term,"hits",len(hits),flush=True)
+    for at in hits[:4]:
+        print("DEBUG_CONTEXT",repr(html[max(0,at-280):at+500]),flush=True)
+for match in re.finditer(r'<button\\b[^>]*>(?:[^<]{0,90})</button>',html,re.I):
+    if any(t in match.group() for t in ["Rezervasyon","Araç Çağır","Kadın Sürücü","Gör"]):
+        print("DEBUG_BUTTON",match.group()[:350],flush=True)
 style = Path("customer/login-approved.css").read_text(encoding="utf-8")
 script = Path("customer/login-approved.js").read_text(encoding="utf-8")
 preload = '<style id="rotaCustomerHideBeforeReady">#authOverlay:not(.rotaCustomerTheme50){visibility:hidden!important}</style>'
