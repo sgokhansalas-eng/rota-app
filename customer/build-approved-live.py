@@ -32,6 +32,14 @@ required = ["authOverlay", "phone", "password", "authBtn", "tabLogin", "tabReg"]
 print("Final50 login controls: %s" % {name:(name in auth_matches) for name in required},flush=True)
 if not all(x in auth_matches for x in required):
     raise SystemExit("Cannot safely publish: current customer login structure changed.")
+# Diagnose the existing registration wiring without reading or changing user data.
+for needle in ["tabReg", "tabLogin", "authBtn", "register", "registerExtra", "registerFields"]:
+    positions = [m.start() for m in re.finditer(re.escape(needle), html, re.I)]
+    print("REGISTER_WIRING", needle, "occurrences",len(positions),flush=True)
+    for idx in positions[-5:]:
+        sample=html[max(0,idx-170):idx+520]
+        sample=re.sub(r'(?i)(apikey|access_token|authorization|secret)\\s*[:=]\\s*[^,;\\s]+',r'\\1=[omitted]',sample)
+        print("REGISTER_SNIPPET",repr(sample[:670]),flush=True)
 style = Path("customer/login-approved.css").read_text(encoding="utf-8")
 script = Path("customer/login-approved.js").read_text(encoding="utf-8")
 preload = '<style id="rotaCustomerHideBeforeReady">#authOverlay:not(.rotaCustomerTheme50){visibility:hidden!important}</style>'
