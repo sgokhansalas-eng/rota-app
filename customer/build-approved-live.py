@@ -27,7 +27,7 @@ if not html:
 if not re.search(r"<html\b", html, re.I) or not re.search(r"</body\s*>", html, re.I):
     raise SystemExit("Cannot safely publish: final50 response was not a complete HTML page.")
 # Keep every existing JS/auth feature intact. Adapt to markup without hardcoded attribute ordering.
-auth_matches = re.findall(r'id\\s*=\\s*["\\']([^"\\']+)["\\']', html, flags=re.I)
+auth_matches = re.findall(r'id\s*=\s*"([^"]+)"', html, flags=re.I)
 required = ["authOverlay", "phone", "password", "authBtn", "tabLogin", "tabReg"]
 print("Final50 login controls: %s" % {name:(name in auth_matches) for name in required},flush=True)
 if not all(x in auth_matches for x in required):
