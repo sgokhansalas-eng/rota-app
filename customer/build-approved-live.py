@@ -40,6 +40,16 @@ for needle in ["tabReg", "tabLogin", "authBtn", "register", "registerExtra", "re
         sample=html[max(0,idx-170):idx+520]
         sample=re.sub(r'(?i)(apikey|access_token|authorization|secret)\\s*[:=]\\s*[^,;\\s]+',r'\\1=[omitted]',sample)
         print("REGISTER_SNIPPET",repr(sample[:670]),flush=True)
+# Bind signup email into the existing registration payload only. Keep login unchanged.
+target = "const payload={role:'customer',phone,password};"
+if html.count(target) != 1:
+    raise SystemExit("Customer signup handler changed; refusing to alter the existing application.")
+html = html.replace(target,
+    "const payload={role:'customer',phone,password};"
+    "if(isReg){payload.email=String(document.getElementById('rotaEmail')?.value||'').trim().toLowerCase();"
+    "if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(payload.email)){"
+    "if(msg)msg.textContent='Geçerli e-posta adresinizi girin.';return;}}",
+    1)
 style = Path("customer/login-approved.css").read_text(encoding="utf-8")
 script = Path("customer/login-approved.js").read_text(encoding="utf-8")
 preload = '<style id="rotaCustomerHideBeforeReady">#authOverlay:not(.rotaCustomerTheme50){visibility:hidden!important}</style>'
