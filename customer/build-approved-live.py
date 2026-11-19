@@ -59,6 +59,12 @@ for term in ["rotaGoogleVisual","#map,.map","Rezervasyon Yap","Araç Çağır","
 for match in re.finditer(r'<button\\b[^>]*>(?:[^<]{0,90})</button>',html,re.I):
     if any(t in match.group() for t in ["Rezervasyon","Araç Çağır","Kadın Sürücü","Gör"]):
         print("DEBUG_BUTTON",match.group()[:350],flush=True)
+# Focused audit of the r33 replacement home screen event handlers.
+for term in ["function openDrawer","function init33","r33Reserve').onclick","r33Reserve\").onclick","r33Call","r33MapCanvas","r33SearchBox","function callVehicle","function openReservation","r33Reserve","r33Search"]:
+    matches=[m.start() for m in re.finditer(re.escape(term),html)]
+    print("R33_AUDIT",term,"count",len(matches),flush=True)
+    for at in matches[-3:]:
+        print("R33_CODE",repr(html[max(0,at-700):at+1300])[:2100],flush=True)
 style = Path("customer/login-approved.css").read_text(encoding="utf-8")
 script = Path("customer/login-approved.js").read_text(encoding="utf-8")
 preload = '<style id="rotaCustomerHideBeforeReady">#authOverlay:not(.rotaCustomerTheme50){visibility:hidden!important}</style>'
