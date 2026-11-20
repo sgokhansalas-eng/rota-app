@@ -15,7 +15,16 @@ $("menu").onclick=()=>$("aside").classList.toggle("open");$("clock").textContent
 let map=null;if(window.L){map=L.map("map",{zoomControl:true}).setView([41.02,29],10);L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap katkıcıları"}).addTo(map);setTimeout(()=>map.invalidateSize(),400)}
 const apiBase="https://ftltemgtzkjfnkxsxxmd.supabase.co/functions/v1/rota2-admin-v2";
 const authBox=document.createElement("div");authBox.id="adminAuth";authBox.style.cssText="position:fixed;inset:0;z-index:9999;background:#eef3fa;display:grid;place-items:center;padding:18px";
-authBox.innerHTML='<div style="width:min(100%,420px);background:white;border-radius:20px;box-shadow:0 15px 50px #0d2d5120;padding:27px"><div style="font-size:32px;font-weight:900;color:#081b3c">ROTA <small style="font-size:13px">Yönetim</small></div><h2>Yetkili yönetici girişi</h2><p style="color:#657792">Bu cihazda oturumunuz açıksa yönetim paneline otomatik geçilir. İlk girişte yönetici şifrenizi bir kez girin; e-posta kodu veya bağlantısı gerekmez.</p><input id="adminEmail" type="email" placeholder="Yönetici e-posta" autocomplete="email" style="width:100%;padding:14px;border:1px solid #ccd8e8;border-radius:11px"><div id="adminWhatsapp" style="margin-top:14px;padding:14px;border:1px solid #d9e5f5;border-radius:12px;background:#f7fbff"><strong style="display:block;margin-bottom:7px;color:#0b2c5b">WhatsApp ile giriş</strong><p style="font-size:12px;color:#53647f;margin:0 0 10px">WhatsApp kodu için Twilio bağlantısı ve yönetici telefon doğrulaması gereklidir. Kurulum tamamlanana kadar mevcut girişiniz korunur.</p><input id="adminWhatsappPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="+90 5XX XXX XX XX" aria-label="WhatsApp telefon numarası" style="width:100%;padding:12px;border:1px solid #ccd8e8;border-radius:10px"><button id="adminWhatsappSend" type="button" class="outline" style="width:100%;margin-top:9px">WhatsApp kodu gönder</button><div id="adminWhatsappCodeArea" style="display:none"><input id="adminWhatsappCode" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="6 haneli doğrulama kodu" style="width:100%;padding:12px;margin-top:10px;border:1px solid #ccd8e8;border-radius:10px"><button id="adminWhatsappVerify" type="button" class="action" style="width:100%;margin-top:9px">Kodla giriş yap</button></div><p id="adminWhatsappMsg" role="status" style="font-size:12px;color:#526481;margin:10px 0 0"></p></div><p style="text-align:center;color:#73849b;font-size:12px;margin:12px 0">Diğer giriş yöntemi</p><input id="adminPassword" type="password" autocomplete="current-password" placeholder="Yönetici şifresi" style="width:100%;padding:14px;margin-top:12px;border:1px solid #ccd8e8;border-radius:11px"><button id="adminSend" class="action" style="width:100%;margin-top:12px">Giriş yap</button><p id="adminMsg" style="color:#b42342;font-size:13px"></p></div>';document.body.appendChild(authBox);
+authBox.innerHTML='<div style="width:min(100%,420px);background:white;border-radius:20px;box-shadow:0 15px 50px #0d2d5120;padding:27px"><div style="font-size:32px;font-weight:900;color:#081b3c">ROTA <small style="font-size:13px">Yönetim</small></div><h2>Yetkili yönetici girişi</h2><p style="color:#657792">Ücretsiz yönetici girişi. Oturumunuz açıksa otomatik geçiş yapılır. İlk defa giriş yapacaksanız aşağıdan kendi şifrenizi oluşturun.</p><input id="adminEmail" type="email" placeholder="Yönetici e-posta" autocomplete="email" style="width:100%;padding:14px;border:1px solid #ccd8e8;border-radius:11px"><input id="adminPassword" type="password" autocomplete="current-password" placeholder="Yönetici şifresi" style="width:100%;padding:14px;margin-top:12px;border:1px solid #ccd8e8;border-radius:11px"><button id="adminSend" class="action" style="width:100%;margin-top:12px">Giriş yap</button><button id="adminResetToggle" type="button" class="outline" style="width:100%;margin-top:10px">İlk kez şifre oluştur / Şifremi unuttum</button><div id="adminResetArea" style="margin-top:15px;padding:14px;border:1px solid #d9e5f5;border-radius:12px;background:#f7fbff;display:none">
+<strong style="display:block;margin-bottom:7px;color:#0b2c5b">Yeni yönetici şifresi oluştur</strong>
+<p style="font-size:12px;color:#53647f;margin:0 0 12px">İlk kurulum için yalnızca bir kez e-posta doğrulaması gerekir. Daha sonra şifrenizle giriş yaparsınız.</p>
+<button id="adminResetSend" type="button" class="outline" style="width:100%">Şifre oluşturma bağlantısı gönder</button>
+<p style="font-size:12px;color:#53647f;margin:12px 0 7px">Gmail'deki son şifre sıfırlama mesajında bağlantıya tıklamayın. Basılı tutup bağlantıyı kopyalayın ve buraya yapıştırın.</p>
+<input id="adminResetLink" type="url" inputmode="url" autocomplete="off" placeholder="E-postadaki bağlantıyı yapıştırın" style="width:100%;padding:12px;border:1px solid #ccd8e8;border-radius:10px">
+<input id="adminResetPass" type="password" autocomplete="new-password" placeholder="Yeni şifre (en az 12 karakter)" style="width:100%;padding:12px;margin-top:9px;border:1px solid #ccd8e8;border-radius:10px">
+<input id="adminResetPassAgain" type="password" autocomplete="new-password" placeholder="Yeni şifre tekrar" style="width:100%;padding:12px;margin-top:9px;border:1px solid #ccd8e8;border-radius:10px">
+<button id="adminResetComplete" type="button" class="action" style="width:100%;margin-top:10px">Şifremi oluştur ve giriş yap</button>
+<p id="adminResetStatus" role="status" style="font-size:12px;color:#53647f;margin:10px 0 0"></p></div><p id="adminMsg" style="color:#b42342;font-size:13px"></p></div>';document.body.appendChild(authBox);
 const detail=document.createElement('div');detail.id="adminDetail";detail.className="card panel";detail.style.marginTop="12px";detail.style.display="none";document.querySelector(".content").appendChild(detail);
 let sb=null;
 function safe(v){return String(v??"").replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
@@ -65,34 +74,42 @@ async function start(){
   }catch(err){message.textContent="Giriş yapılamadı: "+(err.message||"Bilgileri kontrol edin");}
   finally{button.disabled=false;button.textContent="Giriş yap";}
  }
- const waPhone=$("adminWhatsappPhone"),waSend=$("adminWhatsappSend"),waCode=$("adminWhatsappCode"),waVerify=$("adminWhatsappVerify"),waMsg=$("adminWhatsappMsg");
- let waBusy=false,waLastSend=0,waPendingPhone="";
- function phoneValue(){let p=waPhone.value.replace(/[\\s()\\-]/g,"");if(/^05\\d{9}$/.test(p))p="+9"+p;if(/^5\\d{9}$/.test(p))p="+90"+p;return /^\\+90[1-9]\\d{9}$/.test(p)?p:null;}
- waSend.onclick=async()=>{
-  if(waBusy)return;
-  const p=phoneValue();if(!p){waMsg.textContent="Numarayı +90 5XX XXX XX XX biçiminde yazın.";return;}
-  if(Date.now()-waLastSend<60000){waMsg.textContent="Yeni kod istemeden önce en az 60 saniye bekleyin.";return;}
-  waBusy=true;waSend.disabled=true;waMsg.textContent="WhatsApp doğrulama kodu isteniyor...";
-  try{
-   const {error}=await sb.auth.signInWithOtp({phone:p,options:{channel:"whatsapp",shouldCreateUser:false}});
-   if(error)throw error;
-   waPendingPhone=p;waLastSend=Date.now();
-   $("adminWhatsappCodeArea").style.display="block";
-   waMsg.textContent="Kod gönderme isteği kabul edildi. WhatsApp hesabınızı kontrol edin.";
-  }catch(e){waMsg.textContent="WhatsApp kodu gönderilemedi: "+(e.message||"Sağlayıcı veya yönetici telefon kaydı yapılandırılmamış olabilir.")+". Mevcut e-posta/şifre girişini kullanabilirsiniz.";}
-  finally{waBusy=false;waSend.disabled=false;}
+ const resetArea=$("adminResetArea"),resetSend=$("adminResetSend"),resetDone=$("adminResetComplete"),resetStatus=$("adminResetStatus");
+ let resetBusy=false,resetVerified=false;
+ $("adminResetToggle").onclick=()=>{resetArea.style.display=resetArea.style.display==="none"?"block":"none";};
+ resetSend.onclick=async()=>{
+  if(resetBusy)return;
+  const e=email.value.trim();if(e!=="s.gokhan.salas@gmail.com"){resetStatus.textContent="Yalnızca kayıtlı yönetici e-postasıyla devam edin.";return;}
+  resetBusy=true;resetSend.disabled=true;resetStatus.textContent="Şifre oluşturma e-postası isteniyor...";
+  try{const {error}=await sb.auth.resetPasswordForEmail(e);if(error)throw error;
+   resetVerified=false;resetStatus.textContent="E-posta istendi. Son gelen Supabase şifre sıfırlama bağlantısını açmadan kopyalayıp aşağıya yapıştırın.";
+  }catch(err){resetStatus.textContent="İstek başarısız: "+(err.message||"E-posta gönderilemedi");}
+  finally{resetBusy=false;resetSend.disabled=false;}
  };
- waVerify.onclick=async()=>{
-  if(waBusy)return;
-  const token=waCode.value.trim();
-  if(!waPendingPhone||!/^[0-9]{6}$/.test(token)){waMsg.textContent="Önce WhatsApp kodu isteyin ve 6 rakamı girin.";return;}
-  waBusy=true;waVerify.disabled=true;waMsg.textContent="Kod doğrulanıyor...";
+ resetDone.onclick=async()=>{
+  if(resetBusy)return;
+  const p=$("adminResetPass").value,again=$("adminResetPassAgain").value,raw=$("adminResetLink").value.trim();
+  if(p.length<12){resetStatus.textContent="En az 12 karakterden oluşan güçlü şifre belirleyin.";return;}
+  if(p!==again){resetStatus.textContent="Şifreler eşleşmiyor.";return;}
+  resetBusy=true;resetDone.disabled=true;resetStatus.textContent="Doğrulama yapılıyor...";
   try{
-   const {error}=await sb.auth.verifyOtp({phone:waPendingPhone,token,type:"sms"});
-   if(error)throw error;
-   waCode.value="";await activate();
-  }catch(e){waMsg.textContent="Kod doğrulanamadı: "+(e.message||"Kod geçersiz veya süresi dolmuş olabilir.");}
-  finally{waBusy=false;waVerify.disabled=false;}
+   if(!resetVerified){
+    let u;try{u=new URL(raw);}catch{throw Error("Geçerli sıfırlama bağlantısını yapıştırın");}
+    if(u.protocol!=="https:"||u.hostname!=="ftltemgtzkjfnkxsxxmd.supabase.co"||u.pathname!=="/auth/v1/verify"||u.searchParams.get("type")!=="recovery")throw Error("Sadece Supabase şifre sıfırlama bağlantısı kullanılabilir");
+    const hash=u.searchParams.get("token_hash")||u.searchParams.get("token");
+    if(!hash)throw Error("Bağlantıda doğrulama anahtarı bulunamadı");
+    const {error}=await sb.auth.verifyOtp({token_hash:hash,type:"recovery"});
+    if(error)throw error;
+    resetVerified=true;$("adminResetLink").value="";
+   }
+   const {data:identity,error:identityError}=await sb.auth.getUser();
+   if(identityError||identity?.user?.email!=="s.gokhan.salas@gmail.com"||identity?.user?.app_metadata?.role!=="rota_admin")throw Error("Kayıtlı yönetici hesabı doğrulanamadı");
+   const {error}=await sb.auth.updateUser({password:p});if(error)throw error;
+   $("adminResetPass").value="";$("adminResetPassAgain").value="";
+   resetStatus.textContent="Şifreniz kaydedildi. Yönetim paneli açılıyor...";
+   await activate();
+  }catch(err){resetStatus.textContent="Şifre kaydedilemedi: "+(err.message||"Geçersiz bağlantı")+". Gerekirse yeni bağlantı isteyin.";}
+  finally{resetBusy=false;resetDone.disabled=false;}
  };
  button.onclick=login;
  password.addEventListener("keydown",e=>{if(e.key==="Enter")login()});
