@@ -115,3 +115,16 @@ if "/leaflet.js" not in local_assets:
     raise SystemExit("Expected local leaflet.js dependency not found; refusing release.")
 (out / "index.html").write_text(html, encoding="utf-8")
 print("ROTA customer themed release built, original final50 logic retained.",flush=True)
+# Publish the independent, authenticated ROTA admin page under /admin/ without touching customer HTML.
+admin_src = Path("admin/index.html")
+if not admin_src.is_file():
+    raise SystemExit("Missing admin UI source; refusing incomplete release.")
+admin_html = admin_src.read_text(encoding="utf-8")
+if 'id="adminAuth"' not in admin_html and 'authBox.id="adminAuth"' not in admin_html:
+    raise SystemExit("ROTA admin UI is invalid.")
+if 'signInWithPassword' not in admin_html or 'resetPasswordForEmail' not in admin_html:
+    raise SystemExit("ROTA admin auth controls missing.")
+admin_dest = out / "admin" / "index.html"
+admin_dest.parent.mkdir(parents=True,exist_ok=True)
+admin_dest.write_text(admin_html,encoding="utf-8")
+print("ROTA Admin UI published in /admin/; customer main page unchanged.",flush=True)
