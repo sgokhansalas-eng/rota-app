@@ -18,6 +18,7 @@ prestyle = """<style id="rota-auth-no-flash">
 html = html.replace("</head>", prestyle + "\n</head>", 1)
 html = html.replace("</body>", """<script src="/login-gold-v38.js"></script>
 <script src="/login-password-align-v40.js"></script>
+<script src="/keyboard-v34.js"></script>
 <script>
 window.addEventListener('load',function(){
   setTimeout(function(){
@@ -69,6 +70,8 @@ for old, new in map_fixes:
     html = html.replace(old, new, 1)
 print("Driver map invalid coordinate guards installed", flush=True)
 (out / "index.html").write_text(html, encoding="utf-8")
-for name in ["login-gold-v38.js", "login-password-align-v40.js"]:
+for name in ["login-gold-v38.js", "login-password-align-v40.js", "keyboard-v34.js"]:
     shutil.copyfile(Path("driver") / name, out / name)
-print("ROTA Driver entry built from final29, login initialized before first render")
+if 'src="/keyboard-v34.js"' not in html:
+    raise SystemExit("Driver PIN keypad failed to inject; release halted")
+print("ROTA Driver entry built with restored on-screen 4-digit PIN keypad")
