@@ -54,6 +54,20 @@ html = html.replace("https://unpkg.com/leaflet@1.9.4/dist/leaflet.css", "/leafle
 # Existing map initialization uses the same Leaflet API. Only the asset URL changes.
 if "rota-final26-real-live-map-js" not in html or "/leaflet.js" not in html:
     raise SystemExit("Driver map structure changed: refusing to publish.")
+# Fix false GPS coordinates: Number(null) used to become 0, so absent cached
+# coordinates appeared as (0, 0) in the Atlantic Ocean. Do not show a driver
+# pin on the ocean when location permission was refused or data is missing.
+map_fixes = (
+    ("const num26=v=>{const x=Number(v);return Number.isFinite(x)?x:null};",
+     "const num26=v=>{if(v===null||v===undefined||String(v).trim()==='')return null;const x=Number(v);return Number.isFinite(x)?x:null};"),
+    ("const valid26=(a,b)=>a!==null&&b!==null&&a>=-90&&a<=90&&b>=-180&&b<=180;",
+     "const valid26=(a,b)=>a!==null&&b!==null&&a>=-90&&a<=90&&b>=-180&&b<=180&&!(a===0&&b===0);")
+)
+for old, new in map_fixes:
+    if html.count(old) != 1:
+        raise SystemExit("Driver GPS validation signature changed; refusing to publish.")
+    html = html.replace(old, new, 1)
+print("Driver map invalid coordinate guards installed", flush=True)
 (out / "index.html").write_text(html, encoding="utf-8")
 for name in ["login-gold-v38.js", "login-password-align-v40.js"]:
     shutil.copyfile(Path("driver") / name, out / name)
