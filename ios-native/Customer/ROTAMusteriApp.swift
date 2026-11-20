@@ -4,7 +4,7 @@ import SwiftUI
 struct ROTAMusteriApp: App {
     var body: some Scene {
         WindowGroup {
-            ROTAWebView(urlString: "https://rota-musteri-final19.onrender.com")
+            ROTAWebView(urlString: "https://rota-musteri-giris-yeni.onrender.com/")
         }
     }
 }
