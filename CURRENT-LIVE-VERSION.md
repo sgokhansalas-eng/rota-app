@@ -1,20 +1,19 @@
-# ROTA Guncel Canli Surum
+# ROTA – Güncel canlı adresler (20.11.2026)
 
-Bu repo, canli ROTA sisteminin guncel kaynaklarini icerir.
+Bu kaynak deposundaki mağaza paketlerinin temel aldığı üretim adresleri:
 
-## Canli kaynaklar
-- Supabase Edge Functions: `supabase/functions/`
-- Canli veritabani TypeScript tipleri: `supabase/database.types.ts`
-- Android Musteri: `customer/`
-- Android Surucu: `driver/`
-- iPhone native kaynaklari: `ios-native/`
-- iPhone baslaticilari: `share/iphone-musteri.html`, `share/iphone-surucu.html`
+- **ROTA Müşteri (Android / iOS):** https://rota-musteri-giris-yeni.onrender.com/
+- **ROTA Sürücü (Android / iOS):** https://rota-surucu-giris-guncel.onrender.com/
 
-## Canli adresler
-- Musteri web: https://ftltemgtzkjfnkxsxxmd.supabase.co/functions/v1/rota-customer-v3
-- Surucu web: https://rota-surucu-final15.onrender.com/
-- iPhone Musteri: https://ftltemgtzkjfnkxsxxmd.supabase.co/functions/v1/rota-iphone-customer-v2
-- iPhone Surucu: https://ftltemgtzkjfnkxsxxmd.supabase.co/functions/v1/rota-iphone-driver-v2
+Altyapı: Supabase Edge Functions (`supabase/functions/`) ve Render'daki web arayüzleri.
+Android yerel kaynakları: `customer/` ve `driver/`.
+iOS yerel kaynakları: `ios-native/`.
 
-## Not
-Gizli anahtarlar ve kullanici verileri GitHub'a aktarilmaz. Davet edilen ekip uyeleri canli uygulamanin guncel kaynak kodlarini bu repodan gorebilir.
+> Bu adresler uygulamanın **web giriş adresleridir**; Google Play ve App Store mağaza
+> bağlantıları değildir. Mağaza bağlantıları yalnızca mağaza kayıtları oluşturulup
+> sürümler onaylanarak yayımlandıktan sonra kullanılabilir.
+
+Mağaza gönderim hazırlıkları: `store/RELEASE_CHECKLIST.md`,
+`store/listing-musteri-tr.md`, `store/listing-surucu-tr.md`.
+
+Gizli anahtarlar ve kullanıcı verileri GitHub deposuna eklenmemelidir.

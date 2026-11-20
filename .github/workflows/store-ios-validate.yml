@@ -1,0 +1,33 @@
+name: ROTA iOS Store Compile Validation
+on:
+  push:
+    branches: [store-ready-2026-11-20]
+    paths:
+      - 'ios-native/**'
+      - '.github/workflows/store-ios-validate.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  ios-compile-check:
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        scheme: [ROTAMusteri, ROTASurucu]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate Xcode project
+        run: cd ios-native && xcodegen generate
+      - name: Compile on iOS Simulator without signing
+        run: |
+          xcodebuild \
+            -project ios-native/ROTA.xcodeproj \
+            -scheme ${{ matrix.scheme }} \
+            -configuration Release \
+            -sdk iphonesimulator \
+            -destination "generic/platform=iOS Simulator" \
+            CODE_SIGNING_ALLOWED=NO \
+            build

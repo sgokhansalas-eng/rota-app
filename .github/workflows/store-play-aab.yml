@@ -1,0 +1,101 @@
+name: ROTA Google Play App Bundles
+on:
+  push:
+    branches: [store-ready-2026-11-20]
+    paths:
+      - 'customer/**'
+      - 'driver/**'
+      - '.github/workflows/store-play-aab.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [customer, driver]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - name: Install Android 36
+        shell: bash
+        run: |
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | head -n 1)"
+          test -n "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platforms;android-36" "build-tools;36.0.0"
+      - name: Validate both unsigned release AAB files
+        working-directory: ${{ matrix.app }}
+        env:
+          ROTA_VERSION_CODE: ${{ github.run_number }}
+          ROTA_VERSION_NAME: "1.0.${{ github.run_number }}"
+        run: gradle --no-daemon :app:bundleRelease
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rota-${{ matrix.app }}-unsigned-validation-NOT-FOR-PLAY
+          path: ${{ matrix.app }}/app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error
+  signed:
+    if: github.event_name == 'workflow_dispatch'
+    needs: validate
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [customer, driver]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+      - name: Install Android 36
+        shell: bash
+        run: |
+          SDKMANAGER="$(find "$ANDROID_HOME/cmdline-tools" -type f -name sdkmanager | head -n 1)"
+          test -n "$SDKMANAGER"
+          yes | "$SDKMANAGER" --licenses >/dev/null || true
+          "$SDKMANAGER" "platforms;android-36" "build-tools;36.0.0"
+      - name: Provision upload signing key from GitHub secrets
+        shell: bash
+        env:
+          ROTA_UPLOAD_KEYSTORE_B64: ${{ secrets.ROTA_UPLOAD_KEYSTORE_B64 }}
+          ROTA_UPLOAD_STORE_PASSWORD: ${{ secrets.ROTA_UPLOAD_STORE_PASSWORD }}
+          ROTA_UPLOAD_KEY_ALIAS: ${{ secrets.ROTA_UPLOAD_KEY_ALIAS }}
+          ROTA_UPLOAD_KEY_PASSWORD: ${{ secrets.ROTA_UPLOAD_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          for name in ROTA_UPLOAD_KEYSTORE_B64 ROTA_UPLOAD_STORE_PASSWORD ROTA_UPLOAD_KEY_ALIAS ROTA_UPLOAD_KEY_PASSWORD; do
+            if [ -z "${!name:-}" ]; then
+              echo "::error::Missing Google Play upload signing secret: $name"
+              exit 1
+            fi
+          done
+          printf '%s' "$ROTA_UPLOAD_KEYSTORE_B64" | base64 --decode > "$RUNNER_TEMP/rota-play-upload.jks"
+          chmod 600 "$RUNNER_TEMP/rota-play-upload.jks"
+          echo "ROTA_UPLOAD_KEYSTORE_PATH=$RUNNER_TEMP/rota-play-upload.jks" >> "$GITHUB_ENV"
+      - name: Build signed Play AAB
+        working-directory: ${{ matrix.app }}
+        env:
+          ROTA_UPLOAD_STORE_PASSWORD: ${{ secrets.ROTA_UPLOAD_STORE_PASSWORD }}
+          ROTA_UPLOAD_KEY_ALIAS: ${{ secrets.ROTA_UPLOAD_KEY_ALIAS }}
+          ROTA_UPLOAD_KEY_PASSWORD: ${{ secrets.ROTA_UPLOAD_KEY_PASSWORD }}
+          ROTA_VERSION_CODE: ${{ github.run_number }}
+          ROTA_VERSION_NAME: "1.0.${{ github.run_number }}"
+        run: gradle --no-daemon :app:bundleRelease
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ROTA-${{ matrix.app }}-Play-signed-AAB
+          path: ${{ matrix.app }}/app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error

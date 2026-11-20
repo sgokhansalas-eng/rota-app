@@ -464,7 +464,7 @@ class MainActivity : AppCompatActivity() {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 201)
         }
 
-        web.loadUrl("https://rota-surucu-final15.onrender.com")
+        web.loadUrl("https://rota-surucu-giris-guncel.onrender.com/")
     }
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {

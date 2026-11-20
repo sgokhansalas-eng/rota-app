@@ -4,8 +4,6 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.os.Bundle
-import java.net.HttpURLConnection
-import java.net.URL
 import android.view.ViewGroup
 import android.webkit.GeolocationPermissions
 import android.webkit.WebChromeClient
@@ -88,36 +86,11 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val customerUrl = "https://ftltemgtzkjfnkxsxxmd.supabase.co/functions/v1/rota-customer-v3"
+        // The store builds open the same production customer origin as the web app.
+        // Direct WebView navigation preserves cookies, OAuth/email flows and relative assets.
+        // The previous loadDataWithBaseURL approach fetched an obsolete Edge Function.
+        web.loadUrl("https://rota-musteri-giris-yeni.onrender.com/")
 
-        Thread {
-            try {
-                val conn = (URL(customerUrl).openConnection() as HttpURLConnection).apply {
-                    requestMethod = "GET"
-                    connectTimeout = 10000
-                    readTimeout = 10000
-                    setRequestProperty("Accept", "text/html,application/xhtml+xml")
-                    setRequestProperty("Cache-Control", "no-cache")
-                }
-
-                val html = conn.inputStream.bufferedReader(Charsets.UTF_8).use { it.readText() }
-                conn.disconnect()
-
-                runOnUiThread {
-                    web.loadDataWithBaseURL(
-                        customerUrl,
-                        html,
-                        "text/html",
-                        "UTF-8",
-                        null
-                    )
-                }
-            } catch (_: Exception) {
-                runOnUiThread {
-                    web.loadUrl(customerUrl)
-                }
-            }
-        }.start()
     }
 
     override fun onRequestPermissionsResult(

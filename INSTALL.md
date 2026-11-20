@@ -4,7 +4,7 @@ App Store kullanmadan ROTA'yı iPhone ana ekranına uygulama gibi ekleyebilirsin
 
 ## 🚕 ROTA Müşteri
 
-[**ROTA Müşteri Kur**](https://rota-musteri-final19.onrender.com)
+[**ROTA Müşteri Kur**](https://rota-musteri-giris-yeni.onrender.com/)
 
 1. Yukarıdaki **ROTA Müşteri Kur** bağlantısına dokunun.
 2. Sayfayı **Safari** ile açın.
@@ -17,7 +17,7 @@ App Store kullanmadan ROTA'yı iPhone ana ekranına uygulama gibi ekleyebilirsin
 
 ## 🚗 ROTA Sürücü
 
-[**ROTA Sürücü Kur**](https://rota-surucu-final15.onrender.com)
+[**ROTA Sürücü Kur**](https://rota-surucu-giris-guncel.onrender.com/)
 
 1. Yukarıdaki **ROTA Sürücü Kur** bağlantısına dokunun.
 2. Sayfayı **Safari** ile açın.
@@ -31,3 +31,9 @@ App Store kullanmadan ROTA'yı iPhone ana ekranına uygulama gibi ekleyebilirsin
 ### Önemli
 
 Bu yöntem App Store gerektirmez. Kurulumdan sonra ROTA ana ekranda ayrı bir uygulama simgesi gibi görünür.
+
+## Resmî mağaza dağıtımı
+
+App Store ve Google Play indirme bağlantıları, paketler mağaza incelemesinden geçerek
+onaylandıktan sonra eklenecektir. Mağaza gönderim adımları için
+`store/RELEASE_CHECKLIST.md` dosyasına bakın.
