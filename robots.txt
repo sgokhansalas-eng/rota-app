@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://www.xn--vomdanmanlk-4zbe35d.com.tr/sitemap.xml
+Sitemap: https://www.xn--womdansmanlk-64bf.com.tr/sitemap.xml
